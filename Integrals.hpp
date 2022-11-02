@@ -49,7 +49,7 @@ static int A_coherent_Integrand(const int *ndim, const cubareal xx[], const int 
     double rymin = -RangeFactor*R;
     double rymax = RangeFactor*R;
 
-    // DEFINING COORDINATE TRANSFORMS FOR CORRECT INTEGRATION RANGE
+    // DEFINING COORDINATE TRANSFORMS FOR CORRECT INTEGRATION RANGE //
     double bx = bxmin+(bxmax-bxmin)*xx[0];
     double by = bymin+(bymax-bymin)*xx[1];
 
@@ -63,6 +63,7 @@ static int A_coherent_Integrand(const int *ndim, const cubareal xx[], const int 
     std::complex<double> Integrand_T_complex = Jacobian * 1.0i * PsiPsiSimpleModel::PsiPsi_T_no_delta(Q,rx,ry,0.5) * exp(-1.0i*(bx*Deltax+by*Deltay)) * GBWModel::dsigma_qq_d2b(bx,by,rx,ry);
     std::complex<double> Integrand_L_complex = Jacobian * 1.0i * PsiPsiSimpleModel::PsiPsi_L_no_delta(Q,rx,ry,0.5) * exp(-1.0i*(bx*Deltax+by*Deltay)) * GBWModel::dsigma_qq_d2b(bx,by,rx,ry);
 
+    // SEPERATING INTEGRANDS INTO REAL AND IMAG PART //
     ff[0] = Integrand_T_complex.real();
     ff[1] = Integrand_T_complex.imag();
 
@@ -103,7 +104,7 @@ static int A_incoherent_Integrand(const int *ndim, const cubareal xx[], const in
     double rbarymin = -RangeFactor*R;
     double rbarymax = RangeFactor*R;
 
-    // DEFINING COORDINATE TRANSFORMS FOR CORRECT INTEGRATION RANGE
+    // DEFINING COORDINATE TRANSFORMS FOR CORRECT INTEGRATION RANGE //
     double bx = bxmin+(bxmax-bxmin)*xx[0];
     double by = bymin+(bymax-bymin)*xx[1];
 
@@ -123,6 +124,7 @@ static int A_incoherent_Integrand(const int *ndim, const cubareal xx[], const in
     std::complex<double> Integrand_T_complex = Jacobian * 1.0i * PsiPsiSimpleModel::PsiPsi_T_no_delta(Q,rx,ry,0.5) * exp(-1.0i*(bx*Deltax+by*Deltay)) * GBWModel::dsigma_qq_d2b(bx,by,rx,ry) * (-1.0i) * PsiPsiSimpleModel::PsiPsi_T_no_delta(Q,rbarx,rbary,0.5) * exp(+1.0i*(bbarx*Deltax+bbary*Deltay)) * GBWModel::dsigma_qq_d2b(bbarx,bbary,rbarx,rbary);
     std::complex<double> Integrand_L_complex = Jacobian * 1.0i * PsiPsiSimpleModel::PsiPsi_L_no_delta(Q,rx,ry,0.5) * exp(-1.0i*(bx*Deltax+by*Deltay)) * GBWModel::dsigma_qq_d2b(bx,by,rx,ry) * (-1.0i) * PsiPsiSimpleModel::PsiPsi_L_no_delta(Q,rbarx,rbary,0.5) * exp(+1.0i*(bbarx*Deltax+bbary*Deltay)) * GBWModel::dsigma_qq_d2b(bbarx,bbary,rbarx,rbary);
 
+    // SEPERATING INTEGRANDS INTO REAL AND IMAG PART //
     ff[0] = Integrand_T_complex.real();
     ff[1] = Integrand_T_complex.imag();
 
@@ -134,7 +136,7 @@ static int A_incoherent_Integrand(const int *ndim, const cubareal xx[], const in
 
 
 
-std::vector<double> dCoherent_cross_section_dt (USERDATA &pass){
+std::vector<double> dCoherent_cross_section_dt (USERDATA &parameters){
 
     std::vector<double> Return(2);
 
@@ -142,13 +144,26 @@ std::vector<double> dCoherent_cross_section_dt (USERDATA &pass){
     int NumberOfRegions,NumberOfEvaluations,ErrorStatus;
         
     // VALUES AND ERRORS //
-    cubareal Value[4],Error[4],Probability[4];
+    int Num_of_Dimensions = 4;
+    int Num_of_Integrals = 4;
+    int Num_of_Points = 1;
+    double epsrel = 1e-3;
+    double epsabs = 1e-12;
+    int flags1 = 0;
+    int flags2 = 4;
+    int seed = 0;
 
-    Suave(4, 4, A_coherent_Integrand, &pass, 1,
-        1e-3, 1e-12, 0 | 4, 0,
-        MINEVAL, MAXEVAL, NNEW, NMIN, FLATNESS,
-        STATEFILE, SPIN,
-        &NumberOfRegions,&NumberOfEvaluations, &ErrorStatus, Value, Error, Probability
+    cubareal Value[Num_of_Integrals], Error[Num_of_Integrals], Probability[Num_of_Integrals];
+
+    Suave(Num_of_Dimensions, Num_of_Integrals,
+        A_coherent_Integrand, &parameters, Num_of_Points,
+        epsrel, epsabs,
+        flags1 | flags2, seed,
+        MINEVAL, MAXEVAL,
+        NNEW, NMIN,
+        FLATNESS, STATEFILE, SPIN,
+        &NumberOfRegions,&NumberOfEvaluations, &ErrorStatus, 
+        Value, Error, Probability
     );
 
     // Return0 returns Cross section for transverse and Return1 longitudinal
@@ -159,7 +174,7 @@ std::vector<double> dCoherent_cross_section_dt (USERDATA &pass){
 }
 
 
-std::vector<double> dIncoherent_cross_section_dt (USERDATA &pass){
+std::vector<double> dIncoherent_cross_section_dt (USERDATA &parameters){
 
     std::vector<double> Return(2);
 
@@ -167,13 +182,26 @@ std::vector<double> dIncoherent_cross_section_dt (USERDATA &pass){
     int NumberOfRegions,NumberOfEvaluations,ErrorStatus;
         
     // VALUES AND ERRORS //
-    cubareal Value[4],Error[4],Probability[4];
+    int Num_of_Dimensions = 8;
+    int Num_of_Integrals = 4;
+    int Num_of_Points = 1;
+    double epsrel = 1e-3;
+    double epsabs = 1e-12;
+    int flags1 = 0;
+    int flags2 = 4;
+    int seed = 0;
 
-    Suave(8, 4, A_incoherent_Integrand, &pass, 1,
-        1e-3, 1e-12, 0 | 4, 0,
-        MINEVAL, MAXEVAL, NNEW, NMIN, FLATNESS,
-        STATEFILE, SPIN,
-        &NumberOfRegions,&NumberOfEvaluations, &ErrorStatus, Value, Error, Probability
+    cubareal Value[Num_of_Integrals],Error[Num_of_Integrals],Probability[Num_of_Integrals];
+
+    Suave(Num_of_Dimensions, Num_of_Integrals,
+        A_incoherent_Integrand, &parameters, Num_of_Points,
+        epsrel, epsabs,
+        flags1 | flags2, seed,
+        MINEVAL, MAXEVAL,
+        NNEW, NMIN,
+        FLATNESS, STATEFILE, SPIN,
+        &NumberOfRegions,&NumberOfEvaluations, &ErrorStatus, 
+        Value, Error, Probability
     );
 
     // Return0 returns Cross section for transverse and Return1 longitudinal
@@ -184,7 +212,7 @@ std::vector<double> dIncoherent_cross_section_dt (USERDATA &pass){
     // Calculating Coherent Cross section for calculation of variance
     std::vector<double> CoherentReturn(2);
 
-    CoherentReturn = dCoherent_cross_section_dt(pass);
+    CoherentReturn = dCoherent_cross_section_dt(parameters);
 
     // Calculating incoherent cross section T,L
     Return[0] = Return[0] - CoherentReturn[0];
