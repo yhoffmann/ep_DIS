@@ -1,2 +1,2 @@
 all:
-	g++ -Wall ep.cpp -o ep.exe -lcuba -lgsl
+	g++ -Wall src/ep.cpp -o ep.exe -lcuba -lgsl
