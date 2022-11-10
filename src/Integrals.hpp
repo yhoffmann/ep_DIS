@@ -34,6 +34,14 @@
 // INTEGRAND FUNCTIONS //
 static int A_coherent_Integrand(const int *ndim, const cubareal xx[], const int *ncomp, cubareal ff[], void *userdata) {
 
+    // GATHERING PARAMETERS FROM STRUCT //
+    USERDATA parameters = *(USERDATA *) userdata;
+
+    double Deltax = parameters.Deltax;
+    double Deltay = parameters.Deltay;
+    double Q = parameters.Q;
+    double e_Q = parameters.e_Q;
+    
     // INTEGRAL RANGES //
     double RangeFactor = 20.0;
 
@@ -60,8 +68,8 @@ static int A_coherent_Integrand(const int *ndim, const cubareal xx[], const int 
     double Jacobian = (bxmax-bxmin)*(bymax-bymin)*(rxmax-rxmin)*(rymax-rymin);
 
     // DEFINING INTEGRAND FUNCTION //
-    std::complex<double> Integrand_T_complex = Jacobian * 1.0i * PsiPsiSimpleModel::PsiPsi_T_no_delta(Q,rx,ry,0.5) * exp(-1.0i*(bx*Deltax+by*Deltay)) * GBWModel::dsigma_qq_d2b(bx,by,rx,ry);
-    std::complex<double> Integrand_L_complex = Jacobian * 1.0i * PsiPsiSimpleModel::PsiPsi_L_no_delta(Q,rx,ry,0.5) * exp(-1.0i*(bx*Deltax+by*Deltay)) * GBWModel::dsigma_qq_d2b(bx,by,rx,ry);
+    std::complex<double> Integrand_T_complex = Jacobian * 1.0i / (4.0*M_PI) * PsiPsiSimpleModel::PsiPsi_T_no_delta(Q,rx,ry,0.5) * exp(-1.0i*(bx*Deltax+by*Deltay)) * GBWModel::dsigma_qq_d2b(bx,by,rx,ry);
+    std::complex<double> Integrand_L_complex = Jacobian * 1.0i / (4.0*M_PI) * PsiPsiSimpleModel::PsiPsi_L_no_delta(Q,rx,ry,0.5) * exp(-1.0i*(bx*Deltax+by*Deltay)) * GBWModel::dsigma_qq_d2b(bx,by,rx,ry);
 
     // SEPERATING INTEGRANDS INTO REAL AND IMAG PART //
     ff[0] = Integrand_T_complex.real();
@@ -76,6 +84,14 @@ static int A_coherent_Integrand(const int *ndim, const cubareal xx[], const int 
 
 
 static int A_incoherent_Integrand(const int *ndim, const cubareal xx[], const int *ncomp, cubareal ff[], void *userdata) {
+
+    // GATHERING PARAMETERS FROM STRUCT //
+    USERDATA parameters = *(USERDATA *) userdata;
+
+    double Deltax = parameters.Deltax;
+    double Deltay = parameters.Deltay;
+    double Q = parameters.Q;
+    double e_Q = parameters.e_Q;
 
     // INTEGRAL RANGES //
     double RangeFactor = 20.0;
@@ -121,8 +137,8 @@ static int A_incoherent_Integrand(const int *ndim, const cubareal xx[], const in
     double Jacobian = (bxmax-bxmin)*(bymax-bymin)*(rxmax-rxmin)*(rymax-rymin)*(bbarxmax-bbarxmin)*(bbarymax-bbarymin)*(rbarxmax-rbarxmin)*(rbarymax-rbarymin);
 
     // DEFINING INTEGRAND FUNCTION //
-    std::complex<double> Integrand_T_complex = Jacobian * 1.0i * PsiPsiSimpleModel::PsiPsi_T_no_delta(Q,rx,ry,0.5) * exp(-1.0i*(bx*Deltax+by*Deltay)) * GBWModel::dsigma_qq_d2b(bx,by,rx,ry) * (-1.0i) * PsiPsiSimpleModel::PsiPsi_T_no_delta(Q,rbarx,rbary,0.5) * exp(+1.0i*(bbarx*Deltax+bbary*Deltay)) * GBWModel::dsigma_qq_d2b(bbarx,bbary,rbarx,rbary);
-    std::complex<double> Integrand_L_complex = Jacobian * 1.0i * PsiPsiSimpleModel::PsiPsi_L_no_delta(Q,rx,ry,0.5) * exp(-1.0i*(bx*Deltax+by*Deltay)) * GBWModel::dsigma_qq_d2b(bx,by,rx,ry) * (-1.0i) * PsiPsiSimpleModel::PsiPsi_L_no_delta(Q,rbarx,rbary,0.5) * exp(+1.0i*(bbarx*Deltax+bbary*Deltay)) * GBWModel::dsigma_qq_d2b(bbarx,bbary,rbarx,rbary);
+    std::complex<double> Integrand_T_complex = Jacobian * 1.0i / (4.0*M_PI) * PsiPsiSimpleModel::PsiPsi_T_no_delta(Q,rx,ry,0.5) * exp(-1.0i*(bx*Deltax+by*Deltay)) * GBWModel::dsigma_qq_d2b(bx,by,rx,ry) * (-1.0i) * PsiPsiSimpleModel::PsiPsi_T_no_delta(Q,rbarx,rbary,0.5) * exp(+1.0i*(bbarx*Deltax+bbary*Deltay)) * GBWModel::dsigma_qq_d2b(bbarx,bbary,rbarx,rbary);
+    std::complex<double> Integrand_L_complex = Jacobian * 1.0i / (4.0*M_PI) * PsiPsiSimpleModel::PsiPsi_L_no_delta(Q,rx,ry,0.5) * exp(-1.0i*(bx*Deltax+by*Deltay)) * GBWModel::dsigma_qq_d2b(bx,by,rx,ry) * (-1.0i) * PsiPsiSimpleModel::PsiPsi_L_no_delta(Q,rbarx,rbary,0.5) * exp(+1.0i*(bbarx*Deltax+bbary*Deltay)) * GBWModel::dsigma_qq_d2b(bbarx,bbary,rbarx,rbary);
 
     // SEPERATING INTEGRANDS INTO REAL AND IMAG PART //
     ff[0] = Integrand_T_complex.real();

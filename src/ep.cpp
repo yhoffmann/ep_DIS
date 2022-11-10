@@ -19,10 +19,13 @@
 */
 #include <gsl/gsl_sf_bessel.h>
 
-struct USERDATA{ // not needed yet but might be needed later
+// STRUCT FOR PASSING PARAMETERS TO INTEGRAND FUNCTION // might need to add functionality for passing epsilon to PsiPsi functions
+struct USERDATA{
     double Q;
     double Deltax;
     double Deltay;
+    double epsilon;
+    double e_Q;
 };
 
 
@@ -35,6 +38,10 @@ using namespace std::complex_literals;
 int main(int argc, char** argv) {
 
     USERDATA data;
+
+    data.Deltax = 1.0;
+    data.Deltay = 0.0;
+    data.Q = 1.0;
 
     std::vector<double> Return(2);
     
