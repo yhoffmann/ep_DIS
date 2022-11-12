@@ -1,17 +1,17 @@
 # ep-DIS (A test for DIS-like diffractive cross-section resolver)
 
 ## Requirements 
-Cuba integration Library (available at https://feynarts.de/cuba/)
+Cuba integration Library (available at https://feynarts.de/cuba/)  
 GNU Scientific Library
 
 ## How to compile 
  
-To compile you need to simply run 
+To compile you need to simply run  
 ```
 cd path/to/build/fldr
 make
 ```
-and to run
+and to run  
 ```
 ./ep.exe
 ```
@@ -21,5 +21,4 @@ and to run
 The main class is... 
 
 ## Documentation
-Short summary of implemented formulas:
-https://www.overleaf.com/read/fxvswvktwmfd
+Short summary of implemented formulas: https://www.overleaf.com/read/fxvswvktwmfd
