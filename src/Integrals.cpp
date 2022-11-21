@@ -25,7 +25,7 @@
 
 #define KEY 0
 
-#include "ModelsAndFunctions.hpp"
+#include "ModelsAndFunctions.cpp"
 
 // DEFINING MODEL // (done in functions directly)
 
@@ -40,22 +40,23 @@ static int A_coherent_Integrand(const int *ndim, const cubareal xx[], const int 
     double Deltax = parameters.Deltax;
     double Deltay = parameters.Deltay;
     double Q = parameters.Q;
-    double e_Q = parameters.e_Q;
+    double z = parameters.z;
     
     // INTEGRAL RANGES //
-    double RangeFactor = 20.0;
+    double RangeFactor_b = 20.0;
+    double RangeFactor_r = 20.0;
 
-    double bxmin = -RangeFactor*R;
-    double bxmax = RangeFactor*R;
+    double bxmin = -RangeFactor_b*R;
+    double bxmax = RangeFactor_b*R;
 
-    double bymin = -RangeFactor*R;
-    double bymax = RangeFactor*R;
+    double bymin = -RangeFactor_b*R;
+    double bymax = RangeFactor_b*R;
 
-    double rxmin = -RangeFactor*R; // TODO Check r range (maybe depending on model)
-    double rxmax = RangeFactor*R;
+    double rxmin = -RangeFactor_r*R; // TODO Check r range (maybe depending on model)
+    double rxmax = RangeFactor_r*R;
 
-    double rymin = -RangeFactor*R;
-    double rymax = RangeFactor*R;
+    double rymin = -RangeFactor_r*R;
+    double rymax = RangeFactor_r*R;
 
     // DEFINING COORDINATE TRANSFORMS FOR CORRECT INTEGRATION RANGE //
     double bx = bxmin+(bxmax-bxmin)*xx[0];
@@ -68,8 +69,11 @@ static int A_coherent_Integrand(const int *ndim, const cubareal xx[], const int 
     double Jacobian = (bxmax-bxmin)*(bymax-bymin)*(rxmax-rxmin)*(rymax-rymin);
 
     // DEFINING INTEGRAND FUNCTION //
-    std::complex<double> Integrand_T_complex = Jacobian * 1.0i / (4.0*M_PI) * PsiPsiSimpleModel::PsiPsi_T_no_delta(Q,rx,ry,0.5) * exp(-1.0i*(bx*Deltax+by*Deltay)) * GBWModel::dsigma_qq_d2b(bx,by,rx,ry);
-    std::complex<double> Integrand_L_complex = Jacobian * 1.0i / (4.0*M_PI) * PsiPsiSimpleModel::PsiPsi_L_no_delta(Q,rx,ry,0.5) * exp(-1.0i*(bx*Deltax+by*Deltay)) * GBWModel::dsigma_qq_d2b(bx,by,rx,ry);
+    std::complex<double> Integrand_T_complex = Jacobian / (4.0*M_PI) * A_coherent_Integrand_Function::T(Q,bx,by,rx,ry,Deltax,Deltay,z);
+    std::complex<double> Integrand_L_complex = Jacobian / (4.0*M_PI) * A_coherent_Integrand_Function::L(Q,bx,by,rx,ry,Deltax,Deltay,z);
+
+    // printing current value to check for errors
+    //std::cout << Integrand_T_complex << "   " << Integrand_L_complex << std::endl;
 
     // SEPERATING INTEGRANDS INTO REAL AND IMAG PART //
     ff[0] = Integrand_T_complex.real();
@@ -91,34 +95,32 @@ static int A_incoherent_Integrand(const int *ndim, const cubareal xx[], const in
     double Deltax = parameters.Deltax;
     double Deltay = parameters.Deltay;
     double Q = parameters.Q;
-    double e_Q = parameters.e_Q;
+    double z = parameters.z;
+    double zbar = parameters.z;
 
     // INTEGRAL RANGES //
-    double RangeFactor = 20.0;
+    double RangeFactor_b = 15.0;
+    double RangeFactor_r = 15.0;
 
-    double bxmin = -RangeFactor*R;
-    double bxmax = RangeFactor*R;
+    double bxmin = -RangeFactor_b*R;
+    double bxmax = RangeFactor_b*R;
+    double bymin = -RangeFactor_b*R;
+    double bymax = RangeFactor_b*R;
 
-    double bymin = -RangeFactor*R;
-    double bymax = RangeFactor*R;
+    double rxmin = -RangeFactor_r*R; // TODO Check r range (maybe depending on model)
+    double rxmax = RangeFactor_r*R;
+    double rymin = -RangeFactor_r*R;
+    double rymax = RangeFactor_r*R;
 
-    double rxmin = -RangeFactor*R; // TODO Check r range (maybe depending on model)
-    double rxmax = RangeFactor*R;
+    double bbarxmin = -RangeFactor_b*R;
+    double bbarxmax = RangeFactor_b*R;
+    double bbarymin = -RangeFactor_b*R;
+    double bbarymax = RangeFactor_b*R;
 
-    double rymin = -RangeFactor*R;
-    double rymax = RangeFactor*R;
-
-    double bbarxmin = -RangeFactor*R;
-    double bbarxmax = RangeFactor*R;
-
-    double bbarymin = -RangeFactor*R;
-    double bbarymax = RangeFactor*R;
-
-    double rbarxmin = -RangeFactor*R; // TODO Check r range (maybe depending on model)
-    double rbarxmax = RangeFactor*R;
-
-    double rbarymin = -RangeFactor*R;
-    double rbarymax = RangeFactor*R;
+    double rbarxmin = -RangeFactor_r*R; // TODO Check r range (maybe depending on model)
+    double rbarxmax = RangeFactor_r*R;
+    double rbarymin = -RangeFactor_r*R;
+    double rbarymax = RangeFactor_r*R;
 
     // DEFINING COORDINATE TRANSFORMS FOR CORRECT INTEGRATION RANGE //
     double bx = bxmin+(bxmax-bxmin)*xx[0];
@@ -137,8 +139,11 @@ static int A_incoherent_Integrand(const int *ndim, const cubareal xx[], const in
     double Jacobian = (bxmax-bxmin)*(bymax-bymin)*(rxmax-rxmin)*(rymax-rymin)*(bbarxmax-bbarxmin)*(bbarymax-bbarymin)*(rbarxmax-rbarxmin)*(rbarymax-rbarymin);
 
     // DEFINING INTEGRAND FUNCTION //
-    std::complex<double> Integrand_T_complex = Jacobian * 1.0i / (4.0*M_PI) * PsiPsiSimpleModel::PsiPsi_T_no_delta(Q,rx,ry,0.5) * exp(-1.0i*(bx*Deltax+by*Deltay)) * GBWModel::dsigma_qq_d2b(bx,by,rx,ry) * (-1.0i) * PsiPsiSimpleModel::PsiPsi_T_no_delta(Q,rbarx,rbary,0.5) * exp(+1.0i*(bbarx*Deltax+bbary*Deltay)) * GBWModel::dsigma_qq_d2b(bbarx,bbary,rbarx,rbary);
-    std::complex<double> Integrand_L_complex = Jacobian * 1.0i / (4.0*M_PI) * PsiPsiSimpleModel::PsiPsi_L_no_delta(Q,rx,ry,0.5) * exp(-1.0i*(bx*Deltax+by*Deltay)) * GBWModel::dsigma_qq_d2b(bx,by,rx,ry) * (-1.0i) * PsiPsiSimpleModel::PsiPsi_L_no_delta(Q,rbarx,rbary,0.5) * exp(+1.0i*(bbarx*Deltax+bbary*Deltay)) * GBWModel::dsigma_qq_d2b(bbarx,bbary,rbarx,rbary);
+    std::complex<double> Integrand_T_complex = Jacobian / (4.0*M_PI) * A_incoherent_Integrand_Function::T(Q,bx,by,bbarx,bbary,rx,ry,rbarx,rbary,Deltax,Deltay,z,zbar);
+    std::complex<double> Integrand_L_complex = Jacobian / (4.0*M_PI) * A_incoherent_Integrand_Function::L(Q,bx,by,bbarx,bbary,rx,ry,rbarx,rbary,Deltax,Deltay,z,zbar);
+
+    // printing current Value to check for errors
+    //std::cout << Integrand_T_complex << "   " << Integrand_L_complex << std::endl;
 
     // SEPERATING INTEGRANDS INTO REAL AND IMAG PART //
     ff[0] = Integrand_T_complex.real();
@@ -221,18 +226,23 @@ std::vector<double> dIncoherent_cross_section_dt (USERDATA &parameters){
     );
 
     // Return0 returns Cross section for transverse and Return1 longitudinal
-    Return[0] = 1.0/16.0/M_PI*(Value[0]*Value[0]+Value[1]*Value[1]);
-    Return[1] = 1.0/16.0/M_PI*(Value[2]*Value[2]+Value[3]*Value[3]);
-
+    Return[0] = 1.0/16.0/M_PI*std::sqrt(Value[0]*Value[0]+Value[1]*Value[1]);
+    Return[1] = 1.0/16.0/M_PI*std::sqrt(Value[2]*Value[2]+Value[3]*Value[3]);;
     
     // Calculating Coherent Cross section for calculation of variance
     std::vector<double> CoherentReturn(2);
-
     CoherentReturn = dCoherent_cross_section_dt(parameters);
 
     // Calculating incoherent cross section T,L
     Return[0] = Return[0] - CoherentReturn[0];
     Return[1] = Return[1] - CoherentReturn[1];
+
+    // Printing out terms of incoherent cross section, to test
+    std::cout << "========\nFirst term is:\tT: " << Value[0] << "+i" << Value[1] << std::endl;
+    std::cout << "\t\tL: " << Value[2] << "+i" << Value[3] << std::endl;
+
+    std::cout << "========\nSecond term is:\tT: " << CoherentReturn[0] << std::endl;
+    std::cout << "\t\tL: " << CoherentReturn[1] << std::endl;
 
     return Return;
 }

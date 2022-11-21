@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <string>
 #include <complex>
+#include <iomanip>
 
 /*
 #include <gsl/gsl_math.h>
@@ -24,15 +25,13 @@ struct USERDATA{
     double Q;
     double Deltax;
     double Deltay;
-    double epsilon;
-    double e_Q;
+    double z;
 };
 
 
 using namespace std::complex_literals;
 
-#include "Integrals.hpp"
-
+#include "Integrals.cpp"
 
 
 int main(int argc, char** argv) {
@@ -42,6 +41,9 @@ int main(int argc, char** argv) {
     data.Deltax = 1.0;
     data.Deltay = 0.0;
     data.Q = 1.0;
+    data.z = 0.5;
+
+    SetQuarkFlavor('c'); // defining quark flavor
 
     std::vector<double> Return(2);
     
