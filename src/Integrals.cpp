@@ -32,8 +32,8 @@
 
 
 // INTEGRAND FUNCTIONS //
-static int A_coherent_Integrand(const int *ndim, const cubareal xx[], const int *ncomp, cubareal ff[], void *userdata) {
-
+static int A_coherent_Integrand(const int *ndim, const cubareal xx[], const int *ncomp, cubareal ff[], void *userdata)
+{
     // GATHERING PARAMETERS FROM STRUCT //
     USERDATA parameters = *(USERDATA *) userdata;
 
@@ -87,8 +87,8 @@ static int A_coherent_Integrand(const int *ndim, const cubareal xx[], const int 
 
 
 
-static int A_incoherent_Integrand(const int *ndim, const cubareal xx[], const int *ncomp, cubareal ff[], void *userdata) {
-
+static int A_incoherent_Integrand(const int *ndim, const cubareal xx[], const int *ncomp, cubareal ff[], void *userdata)
+{
     // GATHERING PARAMETERS FROM STRUCT //
     USERDATA parameters = *(USERDATA *) userdata;
 
@@ -157,8 +157,8 @@ static int A_incoherent_Integrand(const int *ndim, const cubareal xx[], const in
 
 
 
-std::vector<double> dCoherent_cross_section_dt (USERDATA &parameters){
-
+std::vector<double> dCoherent_cross_section_dt (USERDATA &parameters)
+{
     std::vector<double> Return(2);
 
     // PROCEDURE MONITOR //
@@ -195,8 +195,8 @@ std::vector<double> dCoherent_cross_section_dt (USERDATA &parameters){
 }
 
 
-std::vector<double> dIncoherent_cross_section_dt (USERDATA &parameters){
-
+std::vector<double> dIncoherent_cross_section_dt (USERDATA &parameters)
+{
     std::vector<double> Return(2);
 
     // PROCEDURE MONITOR //
@@ -236,13 +236,13 @@ std::vector<double> dIncoherent_cross_section_dt (USERDATA &parameters){
     // Calculating incoherent cross section T,L
     Return[0] = Return[0] - CoherentReturn[0];
     Return[1] = Return[1] - CoherentReturn[1];
-
+/*
     // Printing out terms of incoherent cross section, to test
     std::cout << "========\nFirst term is:\tT: " << Value[0] << "+i" << Value[1] << std::endl;
     std::cout << "\t\tL: " << Value[2] << "+i" << Value[3] << std::endl;
 
     std::cout << "========\nSecond term is:\tT: " << CoherentReturn[0] << std::endl;
     std::cout << "\t\tL: " << CoherentReturn[1] << std::endl;
-
+*/
     return Return;
 }
