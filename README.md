@@ -1,5 +1,9 @@
 # ep-DIS (A test for DIS-like diffractive cross-section resolver)
 
+## Documentation
+Short summary of implemented formulas: https://www.overleaf.com/read/fxvswvktwmfd  
+Also refer to: NIST Digital Library of Mathematical Functions (https://dlmf.nist.gov/)
+
 ## Requirements 
 Cuba integration Library (available at https://feynarts.de/cuba/)  
 GNU Scientific Library
@@ -19,6 +23,3 @@ and to run
 ## The structure of the code
 
 The main class is... 
-
-## Documentation
-Short summary of implemented formulas: https://www.overleaf.com/read/fxvswvktwmfd
