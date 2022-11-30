@@ -28,5 +28,5 @@ set pm3d
 
 set logscale z 10
 
-splot "DeltaAndQ_Coherent_Test.txt" using 1:2:3 notitle # transverse
-#splot "DeltaAndQ_Coherent_Test.txt" using 1:2:($4*1e+7) notitle # longitudinal
+splot "DeltaAndQ_Coherent_Real_and_Imag_evaluated_Test.txt" using 1:2:3 notitle # transverse
+#splot "DeltaAndQ_Incoherent_Real_and_Imag_evaluated_Test.txt" using 1:2:($4*1e+7) notitle # longitudinal

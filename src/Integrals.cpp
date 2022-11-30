@@ -32,7 +32,8 @@
 
 
 // INTEGRAND FUNCTIONS //
-static int A_coherent_Integrand(const int *ndim, const cubareal xx[], const int *ncomp, cubareal ff[], void *userdata)
+
+static int A_coherent_Integrand (const int *ndim, const cubareal xx[], const int *ncomp, cubareal ff[], void *userdata)
 {
     // GATHERING PARAMETERS FROM STRUCT //
     USERDATA parameters = *(USERDATA *) userdata;
@@ -68,23 +69,15 @@ static int A_coherent_Integrand(const int *ndim, const cubareal xx[], const int 
     // DEFINING JACOBIAN //
     double Jacobian = (bxmax-bxmin)*(bymax-bymin)*(rxmax-rxmin)*(rymax-rymin);
 
-    // DEFINING INTEGRAND FUNCTION //
-    std::complex<double> Integrand_T_complex = Jacobian / (4.0*M_PI) * A_coherent_Integrand_Function::T(Q,bx,by,rx,ry,Deltax,Deltay,z);
-    std::complex<double> Integrand_L_complex = Jacobian / (4.0*M_PI) * A_coherent_Integrand_Function::L(Q,bx,by,rx,ry,Deltax,Deltay,z);
-
-    // printing current value to check for errors
-    //std::cout << Integrand_T_complex << "   " << Integrand_L_complex << std::endl;
-
     // SEPERATING INTEGRANDS INTO REAL AND IMAG PART //
-    ff[0] = Integrand_T_complex.real();
-    ff[1] = Integrand_T_complex.imag();
+    ff[0] = Jacobian / (4.0*M_PI) * A_coherent_Integrand_Function::Trans_real(Q,bx,by,rx,ry,Deltax,Deltay,z);
+    ff[1] = Jacobian / (4.0*M_PI) * A_coherent_Integrand_Function::Trans_imag(Q,bx,by,rx,ry,Deltax,Deltay,z);
 
-    ff[2] = Integrand_L_complex.real();
-    ff[3] = Integrand_L_complex.imag();
+    ff[2] = Jacobian / (4.0*M_PI) * A_coherent_Integrand_Function::Longi_real(Q,bx,by,rx,ry,Deltax,Deltay,z);
+    ff[3] = Jacobian / (4.0*M_PI) * A_coherent_Integrand_Function::Longi_imag(Q,bx,by,rx,ry,Deltax,Deltay,z);
 
     return 0;
 }
-
 
 
 static int A_incoherent_Integrand(const int *ndim, const cubareal xx[], const int *ncomp, cubareal ff[], void *userdata)
@@ -138,19 +131,12 @@ static int A_incoherent_Integrand(const int *ndim, const cubareal xx[], const in
     // DEFINING JACOBIAN //
     double Jacobian = (bxmax-bxmin)*(bymax-bymin)*(rxmax-rxmin)*(rymax-rymin)*(bbarxmax-bbarxmin)*(bbarymax-bbarymin)*(rbarxmax-rbarxmin)*(rbarymax-rbarymin);
 
-    // DEFINING INTEGRAND FUNCTION //
-    std::complex<double> Integrand_T_complex = Jacobian / (4.0*M_PI) * A_incoherent_Integrand_Function::T(Q,bx,by,bbarx,bbary,rx,ry,rbarx,rbary,Deltax,Deltay,z,zbar);
-    std::complex<double> Integrand_L_complex = Jacobian / (4.0*M_PI) * A_incoherent_Integrand_Function::L(Q,bx,by,bbarx,bbary,rx,ry,rbarx,rbary,Deltax,Deltay,z,zbar);
-
-    // printing current Value to check for errors
-    //std::cout << Integrand_T_complex << "   " << Integrand_L_complex << std::endl;
-
     // SEPERATING INTEGRANDS INTO REAL AND IMAG PART //
-    ff[0] = Integrand_T_complex.real();
-    ff[1] = Integrand_T_complex.imag();
+    ff[0] = Jacobian / (4.0*M_PI) / (4.0*M_PI) * A_incoherent_Integrand_Function::Trans_real(Q,bx,by,bbarx,bbary,rx,ry,rbarx,rbary,Deltax,Deltay,z,zbar);
+    ff[1] = Jacobian / (4.0*M_PI) / (4.0*M_PI) * A_incoherent_Integrand_Function::Trans_imag(Q,bx,by,bbarx,bbary,rx,ry,rbarx,rbary,Deltax,Deltay,z,zbar);
 
-    ff[2] = Integrand_L_complex.real();
-    ff[3] = Integrand_L_complex.imag();
+    ff[2] = Jacobian / (4.0*M_PI) / (4.0*M_PI) * A_incoherent_Integrand_Function::Longi_real(Q,bx,by,bbarx,bbary,rx,ry,rbarx,rbary,Deltax,Deltay,z,zbar);
+    ff[3] = Jacobian / (4.0*M_PI) / (4.0*M_PI) * A_incoherent_Integrand_Function::Longi_imag(Q,bx,by,bbarx,bbary,rx,ry,rbarx,rbary,Deltax,Deltay,z,zbar);
 
     return 0;
 }
@@ -187,9 +173,9 @@ std::vector<double> dCoherent_cross_section_dt (USERDATA &parameters)
         Value, Error, Probability
     );
 
-    // Return0 returns Cross section for transverse and Return1 longitudinal
-    Return[0] = 1.0/16.0/M_PI*(Value[0]*Value[0]+Value[1]*Value[1]);
-    Return[1] = 1.0/16.0/M_PI*(Value[2]*Value[2]+Value[3]*Value[3]);
+    // Return0 returns Cross section for transverse and Return1 longitudinal and conversion to nb
+    Return[0] = 1.0/16.0/M_PI*(Value[0]*Value[0]+Value[1]*Value[1]) * 1.0e7;
+    Return[1] = 1.0/16.0/M_PI*(Value[2]*Value[2]+Value[3]*Value[3]) * 1.0e7;
 
     return Return;
 }
@@ -225,9 +211,9 @@ std::vector<double> dIncoherent_cross_section_dt (USERDATA &parameters)
         Value, Error, Probability
     );
 
-    // Return0 returns Cross section for transverse and Return1 longitudinal
-    Return[0] = 1.0/16.0/M_PI*std::sqrt(Value[0]*Value[0]+Value[1]*Value[1]);
-    Return[1] = 1.0/16.0/M_PI*std::sqrt(Value[2]*Value[2]+Value[3]*Value[3]);;
+    // Return0 returns Cross section for transverse and Return1 longitudinal and conversion to nb
+    Return[0] = 1.0/16.0/M_PI*std::sqrt(Value[0]*Value[0]+Value[1]*Value[1]) * 1.0e7;
+    Return[1] = 1.0/16.0/M_PI*std::sqrt(Value[2]*Value[2]+Value[3]*Value[3]) * 1.0e7;
     
     // Calculating Coherent Cross section for calculation of variance
     std::vector<double> CoherentReturn(2);

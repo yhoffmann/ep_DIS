@@ -20,6 +20,16 @@
 */
 #include <gsl/gsl_sf_bessel.h>
 
+
+void Check_Commandline_Arguments(int NumberOfArguments)
+{
+    if (NumberOfArguments != 5)
+    {
+        std::cerr << "Error. Wrong number of command line arguments" << std::endl;
+        exit(0);
+    }
+}
+
 // STRUCT FOR PASSING PARAMETERS TO INTEGRAND FUNCTION // might need to add functionality for passing epsilon to PsiPsi functions
 struct USERDATA
 {
@@ -37,12 +47,14 @@ using namespace std::complex_literals;
 
 int main(int argc, char** argv)
 {
+    Check_Commandline_Arguments(argc);
+
     USERDATA data;
 
-    data.Deltax = 1.0;
-    data.Deltay = 0.0;
-    data.Q = 1.0;
-    data.z = 0.5;
+    data.Deltax = std::atof(argv[1]);
+    data.Deltay = std::atof(argv[2]);
+    data.Q = std::atof(argv[3]);
+    data.z = std::atof(argv[4]);
 
     SetQuarkFlavor('c');
 
@@ -50,41 +62,45 @@ int main(int argc, char** argv)
     
     Return = dCoherent_cross_section_dt(data);
 
-    std::cout << "========\n" << "Coherent Cross Sections by t: \n" << "T: " << Return[0] << "  L: " << Return[1] << " [fm^2]" << std::endl;
+    std::cout << "Coherent Cross Sections by t: \n" << "T: " << Return[0] << "  L: " << Return[1] << " [nb]\n======" << std::endl;
 
     Return = dIncoherent_cross_section_dt(data);
 
-    std::cout << "========\n" << "Incoherent Cross Sections by t: \n" << "T: " << Return[0] << "  L: " << Return[1] << " [fm^2]" << std::endl;
+    std::cout << "Incoherent Cross Sections by t: \n" << "T: " << Return[0] << "  L: " << Return[1] << " [nb]\n======" << std::endl;
 
     // Test Output for multiple combinations of Delta and Q
-    std::fstream OutStreamCoherent;
-    std::fstream OutStreamIncoherent;
-    OutStreamCoherent.open("Data/DeltaAndQ_Coherent_Test.txt");
-    OutStreamIncoherent.open("Data/DeltaAndQ_Incoherent_Test.txt");
-
-    std::vector<double> DeltaRange {1.0, 2.0, 3.0, 4.0, 5.0, 6.0};
-
-    std::vector<double> QRange {0.01, 0.02, 0.03, 0.05, 0.10, 0.15, 0.20, 0.30};
-
-    for (int i=0; i<DeltaRange.size(); i++)
+    if (false)
     {
-        for (int j=0; j<QRange.size(); j++)
+        // For version with .real() and .imag()
+        std::fstream OutStreamCoherent;
+        std::fstream OutStreamIncoherent;
+        OutStreamCoherent.open("Data/DeltaAndQ_Coherent_Test.txt");
+        OutStreamIncoherent.open("Data/DeltaAndQ_Incoherent_Test.txt");
+
+        std::vector<double> DeltaRange {1.0, 2.0, 3.0, 4.0, 5.0, 6.0};
+
+        std::vector<double> QRange {0.01, 0.02, 0.03, 0.05, 0.10, 0.15, 0.20, 0.30};
+
+        for (long unsigned int i=0; i<DeltaRange.size(); i++)
         {
-            data.Deltax = DeltaRange[i]; // varying Parameters to pass to integration function
-            data.Deltay = DeltaRange[i];
-            data.Q = QRange[j];
+            for (long unsigned int j=0; j<QRange.size(); j++)
+            {
+                data.Deltax = DeltaRange[i]; // varying Parameters to pass to integration function
+                data.Deltay = DeltaRange[i];
+                data.Q = QRange[j];
 
-            Return = dCoherent_cross_section_dt(data);
-            OutStreamCoherent << data.Q << " " << data.Deltax << " " << Return[0] << " " << Return[1] << std::endl;
+                Return = dCoherent_cross_section_dt(data);
+                OutStreamCoherent << data.Q << " " << data.Deltax << " " << Return[0] << " " << Return[1] << std::endl;
 
-            //Return = dIncoherent_cross_section_dt(data);
-            //OutStreamIncoherent << Return[0] << " ";
+                //Return = dIncoherent_cross_section_dt(data);
+                //OutStreamIncoherent << Return[0] << " ";
+            }
+            OutStreamCoherent << std::endl;
+            OutStreamIncoherent << std::endl;
         }
-        OutStreamCoherent << std::endl;
-        OutStreamIncoherent << std::endl;
+        OutStreamCoherent.close();
+        OutStreamIncoherent.close();
     }
-    OutStreamCoherent.close();
-    OutStreamIncoherent.close();
-
+    
     return 0;
 }

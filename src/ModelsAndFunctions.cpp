@@ -20,11 +20,11 @@ const double epsilon = 1.0;
 //const double Q = 1.0;
 
 
-void SetQuarkFlavor(char Flavor)
+void SetQuarkFlavor (char Flavor)
 {
-    if(Flavor == 'c'){e_Q = e_c;}
-    else if(Flavor == 't'){e_Q = e_t;}
-    else if(Flavor == 'b'){e_Q = e_b;}
+    if (Flavor == 'c'){e_Q = e_c;}
+    else if (Flavor == 't'){e_Q = e_t;}
+    else if (Flavor == 'b'){e_Q = e_b;}
     //std::cout << "Quark is of flavor " << Flavor << " and with charge " << e_Q << std::endl;
 }
 
@@ -34,17 +34,19 @@ void SetQuarkFlavor(char Flavor)
 
 namespace GBWModel
 {
-    
-    double T(double bx, double by) {
+    double T (double bx, double by)
+    {
         return 1.0 / (2.0*M_PI*B_G) * exp( -(bx*bx+by*by) / (2.0*B_G) );
         //return 1.0 / (2.0*M_PI*R) * exp( -(bx*bx+by*by) / (2.0*R) );
     }
 
-    double Q_s_squared(double bx, double by) {
+    double Q_s_squared (double bx, double by)
+    {
         return sigma_0 * T(bx, by) * Q_s_0 * Q_s_0;
     }
 
-    double dsigma_dip_d2b(double bx, double by, double rx, double ry) {
+    double dsigma_dip_d2b (double bx, double by, double rx, double ry)
+    {
         return 2.0 * ( 1 - exp(-0.25* Q_s_squared(bx,by) * std::sqrt(rx*rx+ry*ry)) );
     }
 }
@@ -53,7 +55,6 @@ namespace GBWModel
 
 namespace PsiPsi_delta_evaluated
 {
-
     double T(double Q, double rx, double ry, double z)
     {
         if (rx == 0.0) {rx = 1e-30;} // <-- without this GSL produces an error because Suave evaluates at xx=0 and gsl_sf_bessel_Kn(0,x) is only defined for x>0
@@ -70,30 +71,50 @@ namespace PsiPsi_delta_evaluated
 
 namespace A_coherent_Integrand_Function
 {
-
-    std::complex<double> T(double Q, double bx, double by, double rx, double ry, double Deltax, double Deltay, double z)
+    double Trans_real (double Q, double bx, double by, double rx, double ry, double Deltax, double Deltay, double z)
     {
-        return 1.0i * PsiPsi_delta_evaluated::T(Q,rx,ry,z) * exp(-1.0i*(bx*Deltax+by*Deltay + (0.5-z)*(rx*Deltax+ry*Deltay))) * GBWModel::dsigma_dip_d2b(bx,by,rx,ry);
+        return -1.0 * PsiPsi_delta_evaluated::T(Q,rx,ry,z) * sin(-1.0*(bx*Deltax+by*Deltay + (0.5-z)*(rx*Deltax+ry*Deltay))) * GBWModel::dsigma_dip_d2b(bx,by,rx,ry);
     }
 
-    std::complex<double> L(double Q, double bx, double by, double rx, double ry, double Deltax, double Deltay, double z)
+    double Trans_imag (double Q, double bx, double by, double rx, double ry, double Deltax, double Deltay, double z)
     {
-        return 1.0i * PsiPsi_delta_evaluated::L(Q,rx,ry,z) * exp(-1.0i*(bx*Deltax+by*Deltay + (0.5-z)*(rx*Deltax+ry*Deltay))) * GBWModel::dsigma_dip_d2b(bx,by,rx,ry);
+        return PsiPsi_delta_evaluated::T(Q,rx,ry,z) * cos(-1.0*(bx*Deltax+by*Deltay + (0.5-z)*(rx*Deltax+ry*Deltay))) * GBWModel::dsigma_dip_d2b(bx,by,rx,ry);
+    }
+
+    double Longi_real (double Q, double bx, double by, double rx, double ry, double Deltax, double Deltay, double z)
+    {
+        return -1.0 * PsiPsi_delta_evaluated::L(Q,rx,ry,z) * sin(-1.0*(bx*Deltax+by*Deltay + (0.5-z)*(rx*Deltax+ry*Deltay))) * GBWModel::dsigma_dip_d2b(bx,by,rx,ry);
+    }
+
+    double Longi_imag (double Q, double bx, double by, double rx, double ry, double Deltax, double Deltay, double z)
+    {
+        return PsiPsi_delta_evaluated::L(Q,rx,ry,z) * cos(-1.0*(bx*Deltax+by*Deltay + (0.5-z)*(rx*Deltax+ry*Deltay))) * GBWModel::dsigma_dip_d2b(bx,by,rx,ry);
     }
 }
 
 namespace A_incoherent_Integrand_Function
 {
-
-    std::complex<double> T(double Q, double bx, double by, double bbarx, double bbary, double rx, double ry, double rbarx, double rbary, double Deltax, double Deltay, double z, double zbar)
+    double Trans_real (double Q, double bx, double by, double bbarx, double bbary, double rx, double ry, double rbarx, double rbary, double Deltax, double Deltay, double z, double zbar)
     {
-        return 1.0i * PsiPsi_delta_evaluated::T(Q,rx,ry,z) * exp(-1.0i*(bx*Deltax+by*Deltay + (0.5-z)*(rx*Deltax+ry*Deltay))) * GBWModel::dsigma_dip_d2b(bx,by,rx,ry)
-        * (-1.0i) * PsiPsi_delta_evaluated::T(Q,rbarx,rbary,zbar) * exp(+1.0i*(bbarx*Deltax+bbary*Deltay + (0.5-z)*(rbarx*Deltax+rbary*Deltay))) * GBWModel::dsigma_dip_d2b(bbarx,bbary,rbarx,rbary);
+        return cos(-1.0*(bx*Deltax+(0.5-z)*(rx*Deltax+ry*Deltay)-bbarx*Deltax-bbary*Deltay-(0.5-zbar)*(rbarx*Deltax+rbary*Deltay))) * PsiPsi_delta_evaluated::T(Q,rx,ry,z) * GBWModel::dsigma_dip_d2b(bx,by,rx,ry)
+            * PsiPsi_delta_evaluated::T(Q,rbarx,rbary,zbar) * GBWModel::dsigma_dip_d2b(bbarx,bbary,rbarx,rbary);
     }
 
-    std::complex<double> L(double Q, double bx, double by, double bbarx, double bbary, double rx, double ry, double rbarx, double rbary, double Deltax, double Deltay, double z, double zbar)
+    double Trans_imag (double Q, double bx, double by, double bbarx, double bbary, double rx, double ry, double rbarx, double rbary, double Deltax, double Deltay, double z, double zbar)
     {
-        return 1.0i * PsiPsi_delta_evaluated::L(Q,rx,ry,z) * exp(-1.0i*(bbarx*Deltax+bbary*Deltay + (0.5-z)*(rbarx*Deltax+rbary*Deltay))) * GBWModel::dsigma_dip_d2b(bx,by,rx,ry)
-        * (-1.0i) * PsiPsi_delta_evaluated::L(Q,rbarx,rbary,zbar) * exp(+1.0i*(bbarx*Deltax+bbary*Deltay + (0.5-z)*(rbarx*Deltax+rbary*Deltay))) * GBWModel::dsigma_dip_d2b(bbarx,bbary,rbarx,rbary);
+        return sin(-1.0*(bx*Deltax+(0.5-z)*(rx*Deltax+ry*Deltay)-bbarx*Deltax-bbary*Deltay-(0.5-zbar)*(rbarx*Deltax+rbary*Deltay))) * PsiPsi_delta_evaluated::T(Q,rx,ry,z) * GBWModel::dsigma_dip_d2b(bx,by,rx,ry)
+            * PsiPsi_delta_evaluated::T(Q,rbarx,rbary,zbar) * GBWModel::dsigma_dip_d2b(bbarx,bbary,rbarx,rbary);
+    }
+
+    double Longi_real (double Q, double bx, double by, double bbarx, double bbary, double rx, double ry, double rbarx, double rbary, double Deltax, double Deltay, double z, double zbar)
+    {
+        return cos(-1.0*(bx*Deltax+(0.5-z)*(rx*Deltax+ry*Deltay)-bbarx*Deltax-bbary*Deltay-(0.5-zbar)*(rbarx*Deltax+rbary*Deltay))) * PsiPsi_delta_evaluated::L(Q,rx,ry,z) * GBWModel::dsigma_dip_d2b(bx,by,rx,ry)
+            * PsiPsi_delta_evaluated::L(Q,rbarx,rbary,zbar) * GBWModel::dsigma_dip_d2b(bbarx,bbary,rbarx,rbary);
+    }
+
+    double Longi_imag (double Q, double bx, double by, double bbarx, double bbary, double rx, double ry, double rbarx, double rbary, double Deltax, double Deltay, double z, double zbar)
+    {
+        return sin(-1.0*(bx*Deltax+(0.5-z)*(rx*Deltax+ry*Deltay)-bbarx*Deltax-bbary*Deltay-(0.5-zbar)*(rbarx*Deltax+rbary*Deltay))) * PsiPsi_delta_evaluated::L(Q,rx,ry,z) * GBWModel::dsigma_dip_d2b(bx,by,rx,ry)
+            * PsiPsi_delta_evaluated::L(Q,rbarx,rbary,zbar) * GBWModel::dsigma_dip_d2b(bbarx,bbary,rbarx,rbary);
     }
 }
