@@ -51,9 +51,9 @@ int main(int argc, char** argv)
 
     USERDATA data;
 
+    data.Q = std::atof(argv[3]);
     data.Deltax = std::atof(argv[1]);
     data.Deltay = std::atof(argv[2]);
-    data.Q = std::atof(argv[3]);
     data.z = std::atof(argv[4]);
 
     SetQuarkFlavor('c');
@@ -76,8 +76,10 @@ int main(int argc, char** argv)
         std::fstream OutStreamIncoherent;
         OutStreamCoherent.open("Data/DeltaAndQ_Coherent_Test.txt");
         OutStreamIncoherent.open("Data/DeltaAndQ_Incoherent_Test.txt");
+        OutStreamCoherent << "#Q, Delta squared, T, L" << std::endl;
+        OutStreamIncoherent << "#Q, Delta squared, T, L" << std::endl;
 
-        std::vector<double> DeltaRange {1.0, 2.0, 3.0, 4.0, 5.0, 6.0};
+        std::vector<double> DeltaRange {0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6};
 
         std::vector<double> QRange {0.01, 0.02, 0.03, 0.05, 0.10, 0.15, 0.20, 0.30};
 
@@ -90,7 +92,7 @@ int main(int argc, char** argv)
                 data.Q = QRange[j];
 
                 Return = dCoherent_cross_section_dt(data);
-                OutStreamCoherent << data.Q << " " << data.Deltax << " " << Return[0] << " " << Return[1] << std::endl;
+                OutStreamCoherent << data.Q << " " << data.Deltax*data.Deltax << " " << Return[0] << " " << Return[1] << std::endl;
 
                 //Return = dIncoherent_cross_section_dt(data);
                 //OutStreamIncoherent << Return[0] << " ";
