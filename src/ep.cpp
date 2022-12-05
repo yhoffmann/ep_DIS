@@ -77,7 +77,7 @@ int main(int argc, char** argv)
         OutStreamCoherent.open("Data/DeltaAndQ_Coherent_Test.txt");
         OutStreamIncoherent.open("Data/DeltaAndQ_Incoherent_Test.txt");
         OutStreamCoherent << "#Q, Delta squared, T, L, analytical T, analytical L" << std::endl;
-        OutStreamIncoherent << "#Q, Delta squared, T, L" << std::endl;
+        OutStreamIncoherent << "#Q, Delta squared, T, L, Analytical T, L, Full T, L" << std::endl;
 
         std::vector<double> DeltaRange {0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6};
 
@@ -97,7 +97,7 @@ int main(int argc, char** argv)
                 dsigma_dt_Analytical_Trans = dsigma_dt_coherent_analytical::Trans(data.Q,data.Deltax,data.Deltay,data.z);
                 dsigma_dt_Analytical_Longi = dsigma_dt_coherent_analytical::Longi(data.Q,data.Deltax,data.Deltay,data.z);
                 Return2 = dsigma_dt_full(data);
-                OutStreamCoherent << data.Q << " " << data.Deltax*data.Deltax << " " << Return[0] << " " << Return[1] << " " << dsigma_dt_Analytical_Trans << " " << dsigma_dt_Analytical_Longi << " " << Return[0] << " " << Return[1] << std::endl;
+                OutStreamCoherent << data.Q << " " << data.Deltax*data.Deltax << " " << Return[0] << " " << Return[1] << " " << dsigma_dt_Analytical_Trans << " " << dsigma_dt_Analytical_Longi << " " << Return2[0] << " " << Return2[1] << std::endl;
 
                 std::cout << Return[1]/Return2[1] << " ";
 

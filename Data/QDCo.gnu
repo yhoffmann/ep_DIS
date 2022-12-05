@@ -27,6 +27,6 @@ set pm3d #map interpolate 20,20
 #set palette defined (0 "white", 0.5 "#ffd000" , 1.6 "red", 2.7 "blue", 3.8 "black")
 #set palette rgb 21,22,23
 
-set logscale z 10
+#set logscale z 10
 
-splot "DeltaAndQ_Coherent_Test.txt" using 1:2:($4/$8) notitle
+splot "DeltaAndQ_Coherent_Test.txt" using 1:2:($4/$6) notitle
