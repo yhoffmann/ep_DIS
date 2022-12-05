@@ -1,4 +1,4 @@
-#Q, Delta squared, T, L, Analytical T, L, Full T, L
+#Q, Delta squared, T, L
 
 
 
@@ -8,5 +8,6 @@
 
 
 
-e-10 -8.39879e-10 
+4e-10 
+-8.39879e-10 -8.39879e-10 -8.39879e-10 
 -8.25915e-10 -8.25915e-10 -8.25915e-10 

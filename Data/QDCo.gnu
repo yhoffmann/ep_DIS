@@ -29,4 +29,5 @@ set pm3d #map interpolate 20,20
 
 #set logscale z 10
 
-splot "DeltaAndQ_Coherent_Test.txt" using 1:2:($4/$6) notitle
+#splot "DeltaAndQ_Coherent_Test.txt" using 1:2:3 notitle # transverse
+splot "DeltaAndQ_Coherent_Test.txt" using 1:2:($4/$6) notitle # longitudinal
