@@ -23,7 +23,7 @@
 
 void Check_Commandline_Arguments(int NumberOfArguments)
 {
-    if (NumberOfArguments != 5)
+    if (NumberOfArguments != 6)
     {
         std::cerr << "Error. Wrong number of command line arguments" << std::endl;
         exit(0);
@@ -37,6 +37,7 @@ using namespace std::complex_literals;
 
 int main(int argc, char** argv)
 {
+    UseSuave = std::atoi(argv[5]);
     Check_Commandline_Arguments(argc);
 
     USERDATA data;
@@ -45,72 +46,47 @@ int main(int argc, char** argv)
     data.Deltax = std::atof(argv[2]);
     data.Deltay = std::atof(argv[3]);
     data.z = std::atof(argv[4]);
+    data.WhichIntegrand = -1; // -1 as failsafe: will stop program if not changed in integration function
 
     SetQuarkFlavor('c');
 
-    std::vector<double> Return(2);
+    // defining vectors for return of coherent and incoherent cross sections
+    std::vector<double> dsigmabydt_coherent_Result(2);
+    std::vector<double> dsigmabydt_incoherent_Result(2);
+    std::vector<double> dsigmabydt_coherent_BetweenRoots_Result(2);
+    std::vector<double> dsigmabydt_coherent_polar_Result(2);
+
     
-    Return = dsigma_dt_coherent(data);
 
-    std::cout << "Coherent Cross Sections by t:\n" << "T: " << Return[0] << "  L: " << Return[1] << " [nb]\n======" << std::endl;
 
-    Return = dsigma_dt_incoherent(data);
+    // calculating cross sections and saving results in vectors
+    dsigmabydt_coherent_Result = dsigmabydt_coherent(data);
+    dsigmabydt_incoherent_Result = dsigmabydt_incoherent(data);
+    dsigmabydt_coherent_polar_Result = dsigmabydt_coherent_polar(data);
 
-    std::cout << "Incoherent Cross Sections by t:\n" << "T: " << Return[0] << "  L: " << Return[1] << " [nb]\n======" << std::endl;
+    // printing cross sections results for normal integrals
+    std::cout << "###Cross section results\nCoherent Cross Section:\nT: " << dsigmabydt_coherent_Result[0] << " \tL: " << dsigmabydt_coherent_Result[1] << std::endl;
+    std::cout << "Incoherent Cross Section:\nT: " << dsigmabydt_incoherent_Result[0] << " \tL: " << dsigmabydt_incoherent_Result[1] << std::endl;
+    std::cout << "Coherent Cross Section from between roots\nT: " << dsigmabydt_coherent_BetweenRoots_Result[0] << " \tL: " << dsigmabydt_coherent_BetweenRoots_Result[1] << std::endl;
+    std::cout << "Coherent Cross Section with polar coordinate integration\nT: " << dsigmabydt_coherent_polar_Result[0] << " \tL: " << dsigmabydt_coherent_polar_Result[1] << std::endl;
+    std::cout << "Karthesian/Polar:\nT: " << dsigmabydt_coherent_Result[0]/dsigmabydt_coherent_polar_Result[0] << " \tL: " << dsigmabydt_coherent_Result[1]/dsigmabydt_coherent_polar_Result[1] << std::endl;
+/*
+    // Comparing first order analytical result with first order integrated result
+    std::vector<double> dsigmabydt_coherent_analytical_first_order_result(2);
+    std::vector<double> dsigmabydt_coherent_integrated_first_order_result(2);
+    std::vector<double> dsigmabydt_coherent_integrated_first_order_result_UsingBetweenRootCalc(2);
 
-    double dsigma_dt_Analytical_Trans = dsigma_dt_coherent_analytical::Trans(data.Q,data.Deltax,data.Deltay,data.z);
+    dsigmabydt_coherent_analytical_first_order_result[0] = dsigmabydt_coherent_analytical_first_order::Trans(data.Q,data.Deltax,data.Deltay,data.z);
+    dsigmabydt_coherent_analytical_first_order_result[1] = dsigmabydt_coherent_analytical_first_order::Longi(data.Q,data.Deltax,data.Deltay,data.z);
+    dsigmabydt_coherent_integrated_first_order_result = dsigmabydt_coherent_first_order(data);
+    dsigmabydt_coherent_integrated_first_order_result_UsingBetweenRootCalc = dsigmabydt_coherent_first_order_UsingBetweenRootCalc(data);
 
-    double dsigma_dt_Analytical_Longi = dsigma_dt_coherent_analytical::Longi(data.Q,data.Deltax,data.Deltay,data.z);
-
-    std::cout << "###Analytical Result:\nCoherent Cross Sections by t:\n" << "T: " << dsigma_dt_Analytical_Trans << "  L: " << dsigma_dt_Analytical_Longi << " [nb]\n======" << std::endl;
-
-    Return = dsigma_dt_coherent_first_oder(data);
-
-    std::cout << "###Numerical first order:\nCoherent Cross Sections by t:\n" << "T: " << Return[0] << "  L: " << Return[1] << " [nb]\n======" << std::endl;
-
-    // Test Output for multiple combinations of Delta and Q
-    if (true)
-    {
-        // For version with .real() and .imag()
-        std::fstream OutStreamCoherent;
-        std::fstream OutStreamIncoherent;
-        OutStreamCoherent.open("Data/DeltaAndQ_Coherent_Test.txt");
-        OutStreamIncoherent.open("Data/DeltaAndQ_Incoherent_Test.txt");
-        OutStreamCoherent << "#Q, Delta squared, T, L, analytical T, analytical L" << std::endl;
-        OutStreamIncoherent << "#Q, Delta squared, T, L, Analytical T, L, Full T, L" << std::endl;
-
-        std::vector<double> DeltaRange {0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6};
-
-        std::vector<double> QRange {0.01, 0.02, 0.03, 0.05, 0.10, 0.15, 0.20, 0.30};
-
-        std::vector<double> Return2(2);
-
-        for (long unsigned int i=0; i<DeltaRange.size(); i++)
-        {
-            for (long unsigned int j=0; j<QRange.size(); j++)
-            {
-                data.Deltax = DeltaRange[i]; // varying Parameters to pass to integration function
-                data.Deltay = DeltaRange[i];
-                data.Q = QRange[j];
-
-                Return = dsigma_dt_coherent(data);
-                dsigma_dt_Analytical_Trans = dsigma_dt_coherent_analytical::Trans(data.Q,data.Deltax,data.Deltay,data.z);
-                dsigma_dt_Analytical_Longi = dsigma_dt_coherent_analytical::Longi(data.Q,data.Deltax,data.Deltay,data.z);
-                Return2 = dsigma_dt_full(data);
-                OutStreamCoherent << data.Q << " " << data.Deltax*data.Deltax << " " << Return[0] << " " << Return[1] << " " << dsigma_dt_Analytical_Trans << " " << dsigma_dt_Analytical_Longi << " " << Return2[0] << " " << Return2[1] << std::endl;
-
-                std::cout << Return[1]/Return2[1] << " ";
-
-                //Return = dIncoherent_cross_section_dt(data);
-                //OutStreamIncoherent << Return[0] << " ";
-            }
-            OutStreamCoherent << std::endl;
-            OutStreamIncoherent << std::endl;
-        }
-        std::cout << std::endl;
-        OutStreamCoherent.close();
-        OutStreamIncoherent.close();
-    }
-    
+    std::cout << "###Comparing first order analytical with numerical result and numerical reusult with root calculation:\nA:\tT: " << dsigmabydt_coherent_analytical_first_order_result[0] << "\tL: " << dsigmabydt_coherent_analytical_first_order_result[1] << std::endl;
+    std::cout << "N:\tT: " << dsigmabydt_coherent_integrated_first_order_result[0] << "\tL: " << dsigmabydt_coherent_integrated_first_order_result[1] << std::endl;
+    std::cout << "NRoots:\tT: " << dsigmabydt_coherent_integrated_first_order_result_UsingBetweenRootCalc[0] << "\tL: " << dsigmabydt_coherent_integrated_first_order_result_UsingBetweenRootCalc[1] << std::endl;
+    std::cout << "A/N:\tT: " << dsigmabydt_coherent_analytical_first_order_result[0]/dsigmabydt_coherent_integrated_first_order_result[0] << "\tL: " << dsigmabydt_coherent_analytical_first_order_result[1]/dsigmabydt_coherent_integrated_first_order_result[1] << std::endl;
+    std::cout << "N/NRs:\tT: " << dsigmabydt_coherent_integrated_first_order_result[0]/dsigmabydt_coherent_integrated_first_order_result_UsingBetweenRootCalc[0] << "\tL: " << dsigmabydt_coherent_integrated_first_order_result[1]/dsigmabydt_coherent_integrated_first_order_result_UsingBetweenRootCalc[1] << std::endl;
+    std::cout << "A/NRs:\tT: " << dsigmabydt_coherent_analytical_first_order_result[0]/dsigmabydt_coherent_integrated_first_order_result_UsingBetweenRootCalc[0] << "\tL: " << dsigmabydt_coherent_analytical_first_order_result[1]/dsigmabydt_coherent_integrated_first_order_result_UsingBetweenRootCalc[1] << std::endl;
+*/
     return 0;
 }

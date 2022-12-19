@@ -1,4 +1,4 @@
-#define MINEVAL 100000
+#define MINEVAL 0
 #define MAXEVAL 500000
 
 #define NSTART 1000
@@ -10,7 +10,7 @@
 
 #define NNEW 1000
 #define NMIN 2
-#define FLATNESS 25.
+#define FLATNESS 100.
 
 #define KEY1 47
 #define KEY2 1
@@ -27,6 +27,49 @@
 
 #include "ModelsAndFunctions.cpp"
 
+int UseSuave; // initialization only, value is set from command line
+
+// Struct for passing parameters and integration ranges to integrand function
+struct USERDATA
+{
+    double Q;
+    double Deltax;
+    double Deltay;
+    double z;
+    int WhichIntegrand;
+    double bmin;
+    double bmax;
+};
+
+
+void FindRoot_Coherent(int n, USERDATA &parameters)
+{
+    if (parameters.Deltay != 0.0) {std::cerr << "Deltay needs to be 0 for FindRoot to work properly!" << std::endl;}
+
+    switch (parameters.WhichIntegrand)
+    {
+        case 0: //Trans real, sin
+            parameters.bmin = -double(n)*M_PI/(parameters.Deltax*GeVTofmm1);
+            parameters.bmax = -double(n-1)*M_PI/(parameters.Deltax*GeVTofmm1);
+            break;
+        case 1: //Trans imag, cos
+            parameters.bmin = (double(n)-0.5)*M_PI/(parameters.Deltax*GeVTofmm1);
+            parameters.bmax = (double(n)+0.5)*M_PI/(parameters.Deltax*GeVTofmm1);
+            break;
+        case 2: //Longi real, sin
+            parameters.bmin = -double(n)*M_PI/(parameters.Deltax*GeVTofmm1);
+            parameters.bmax = -double(n-1)*M_PI/(parameters.Deltax*GeVTofmm1);
+            break;
+        case 3: //Longi imag, cos
+            parameters.bmin = (double(n)-0.5)*M_PI/(parameters.Deltax*GeVTofmm1);
+            parameters.bmax = (double(n)+0.5)*M_PI/(parameters.Deltax*GeVTofmm1);
+            break;
+        default:
+            std::cerr << "Error in FindRoot, WhichFuntion out of range. Exiting!" << std::endl;
+            break;
+    }
+}
+
 // DEFINING MODEL // (done in functions directly)
 
 
@@ -42,10 +85,11 @@ static int A_coherent_Integrand (const int *ndim, const cubareal xx[], const int
     double Deltay = parameters.Deltay;
     double Q = parameters.Q;
     double z = parameters.z;
+    int WhichIntegrand = parameters.WhichIntegrand;
     
     // INTEGRAL RANGES //
-    double RangeFactor_b = 20.0;
-    double RangeFactor_r = 20.0;
+    double RangeFactor_b = 5.0;
+    double RangeFactor_r = 5.0;
 
     double bxmin = -RangeFactor_b*R;
     double bxmax = RangeFactor_b*R;
@@ -69,15 +113,156 @@ static int A_coherent_Integrand (const int *ndim, const cubareal xx[], const int
     // DEFINING JACOBIAN //
     double Jacobian = (bxmax-bxmin)*(bymax-bymin)*(rxmax-rxmin)*(rymax-rymin);
 
-    // SEPERATING INTEGRANDS INTO REAL AND IMAG PART //
-    ff[0] = Jacobian / (4.0*M_PI) * A_coherent_Integrand_Function::Trans_real(Q,bx,by,rx,ry,Deltax,Deltay,z);
-    ff[1] = Jacobian / (4.0*M_PI) * A_coherent_Integrand_Function::Trans_imag(Q,bx,by,rx,ry,Deltax,Deltay,z);
-
-    ff[2] = Jacobian / (4.0*M_PI) * A_coherent_Integrand_Function::Longi_real(Q,bx,by,rx,ry,Deltax,Deltay,z);
-    ff[3] = Jacobian / (4.0*M_PI) * A_coherent_Integrand_Function::Longi_imag(Q,bx,by,rx,ry,Deltax,Deltay,z);
+    // seperating integrand into real and imag parts and defining actual integrand function to be used for integration based on parameter from struct
+    switch (WhichIntegrand)
+    {
+    case 0:
+        ff[0] = Jacobian / (4.0*M_PI) * A_coherent_Integrand_Function::Trans_real(Q,bx,by,rx,ry,Deltax,Deltay,z);
+        break;
+    case 1:
+        ff[0] = Jacobian / (4.0*M_PI) * A_coherent_Integrand_Function::Trans_imag(Q,bx,by,rx,ry,Deltax,Deltay,z);
+        break;
+    case 2:
+        ff[0] = Jacobian / (4.0*M_PI) * A_coherent_Integrand_Function::Longi_real(Q,bx,by,rx,ry,Deltax,Deltay,z);
+        break;
+    case 3:
+        ff[0] = Jacobian / (4.0*M_PI) * A_coherent_Integrand_Function::Longi_imag(Q,bx,by,rx,ry,Deltax,Deltay,z);
+        break;
+    default:
+        std::cout << "No Integrand funciton for this parameter." << std::endl;
+        // have to figure out a way to stop integration function
+        break;
+    }
 
     return 0;
 }
+
+
+static int A_coherent_Integrand_polar (const int *ndim, const cubareal xx[], const int *ncomp, cubareal ff[], void *userdata)
+{
+    // GATHERING PARAMETERS FROM STRUCT //
+    USERDATA parameters = *(USERDATA *) userdata;
+
+    double Deltax = parameters.Deltax;
+    double Deltay = parameters.Deltay;
+    double Q = parameters.Q;
+    double z = parameters.z;
+    int WhichIntegrand = parameters.WhichIntegrand;
+    
+    // INTEGRAL RANGES //
+    double RangeFactor_b = 5.0;
+    double RangeFactor_r = 5.0;
+
+    double bmin = 0;
+    double bmax = RangeFactor_b*R;
+
+    double phimin = 0;
+    double phimax = 2*M_PI;
+
+    double rmin = 0; // TODO Check r range (maybe depending on model)
+    double rmax = RangeFactor_r*R;
+
+    // DEFINING COORDINATE TRANSFORMS FOR CORRECT INTEGRATION RANGE //
+    double b = bmin+(bmax-bmin)*xx[0];
+
+    double phi = 2*M_PI*xx[1];
+
+    double r = rmin+(rmax-rmin)*xx[2];
+    
+    // DEFINING JACOBIAN //
+    double Jacobian = (bmax-bmin)*(rmax-rmin)*b*2*M_PI*r;
+
+    // seperating integrand into real and imag parts and defining actual integrand function to be used for integration based on parameter from struct
+    switch (WhichIntegrand)
+    {
+    case 0:
+        ff[0] = Jacobian / (4.0*M_PI) * A_coherent_Integrand_Function::Trans_real(Q,b,0,r,0,Deltax*cos(phi),Deltay,z);
+        break;
+    case 1:
+        ff[0] = Jacobian / (4.0*M_PI) * A_coherent_Integrand_Function::Trans_imag(Q,b,0,r,0,Deltax*cos(phi),Deltay,z);
+        break;
+    case 2:
+        ff[0] = Jacobian / (4.0*M_PI) * A_coherent_Integrand_Function::Longi_real(Q,b,0,r,0,Deltax*cos(phi),Deltay,z);
+        break;
+    case 3:
+        ff[0] = Jacobian / (4.0*M_PI) * A_coherent_Integrand_Function::Longi_imag(Q,b,0,r,0,Deltax*cos(phi),Deltay,z);
+        break;
+    default:
+        std::cout << "No Integrand funciton for this parameter." << std::endl;
+        // have to figure out a way to stop integration function
+        break;
+    }
+
+    return 0;
+}
+
+
+static int A_coherent_Integrand_UsingBetweenRootsCalc (const int *ndim, const cubareal xx[], const int *ncomp, cubareal ff[], void *userdata)
+{
+    // GATHERING PARAMETERS FROM STRUCT //
+    USERDATA parameters = *(USERDATA *) userdata;
+
+    double Deltax = parameters.Deltax;
+    double Deltay = parameters.Deltay;
+    double Q = parameters.Q;
+    double z = parameters.z;
+    int WhichIntegrand = parameters.WhichIntegrand;
+    double bmin = parameters.bmin;
+    double bmax = parameters.bmax;
+    
+    // INTEGRAL RANGES //
+    double RangeFactor_r = 5.0;
+
+    double bxmin = bmin;
+    double bxmax = bmax;
+
+    double bymin = bmin;
+    double bymax = bmax;
+
+    double rxmin = -RangeFactor_r*R; // TODO Check r range (maybe depending on model)
+    double rxmax = RangeFactor_r*R;
+
+    double rymin = -RangeFactor_r*R;
+    double rymax = RangeFactor_r*R;
+
+    // DEFINING COORDINATE TRANSFORMS FOR CORRECT INTEGRATION RANGE //
+    double bx = bxmin+(bxmax-bxmin)*xx[0];
+    double by = bymin+(bymax-bymin)*xx[1];
+
+    double rx = rxmin+(rxmax-rxmin)*xx[2];
+    double ry = rymin+(rymax-rymin)*xx[3];
+    
+    // DEFINING JACOBIAN //
+    double Jacobian = (bxmax-bxmin)*(bymax-bymin)*(rxmax-rxmin)*(rymax-rymin);
+
+    // seperating integrand into real and imag parts and defining actual integrand function to be used for integration based on parameter from struct
+    switch (WhichIntegrand)
+    {
+    case 0:
+        ff[0] = Jacobian / (4.0*M_PI) * A_coherent_Integrand_Function::Trans_real(Q,bx,by,rx,ry,Deltax,Deltay,z);
+        std::cout << "0 " << A_coherent_integrand_Function_first_order::Trans_real(Q,bmin,by,rx,ry,Deltax,Deltay,z) << " " << A_coherent_integrand_Function_first_order::Trans_real(Q,bmax,by,rx,ry,Deltax,Deltay,z) << std::endl;
+        break;
+    case 1:
+        ff[0] = Jacobian / (4.0*M_PI) * A_coherent_Integrand_Function::Trans_imag(Q,bx,by,rx,ry,Deltax,Deltay,z);
+        std::cout << "1 " << A_coherent_integrand_Function_first_order::Trans_imag(Q,bmin,by,rx,ry,Deltax,Deltay,z) << " " << A_coherent_integrand_Function_first_order::Trans_imag(Q,bmax,by,rx,ry,Deltax,Deltay,z) << std::endl;
+        break;
+    case 2:
+        ff[0] = Jacobian / (4.0*M_PI) * A_coherent_Integrand_Function::Longi_real(Q,bx,by,rx,ry,Deltax,Deltay,z);
+        std::cout << "2 " << A_coherent_integrand_Function_first_order::Longi_real(Q,bmin,by,rx,ry,Deltax,Deltay,z) << " " << A_coherent_integrand_Function_first_order::Longi_real(Q,bmax,by,rx,ry,Deltax,Deltay,z) << std::endl;
+        break;
+    case 3:
+        ff[0] = Jacobian / (4.0*M_PI) * A_coherent_Integrand_Function::Longi_imag(Q,bx,by,rx,ry,Deltax,Deltay,z);
+        std::cout << "3 " << A_coherent_integrand_Function_first_order::Longi_imag(Q,bmin,by,rx,ry,Deltax,Deltay,z) << " " << A_coherent_integrand_Function_first_order::Longi_imag(Q,bmax,by,rx,ry,Deltax,Deltay,z) << std::endl;
+        break;
+    default:
+        std::cout << "No Integrand funciton for this parameter." << std::endl;
+        // have to figure out a way to stop integration function
+        break;
+    }
+
+    return 0;
+}
+
 
 static int A_coherent_Integrand_first_order (const int *ndim, const cubareal xx[], const int *ncomp, cubareal ff[], void *userdata)
 {
@@ -88,10 +273,11 @@ static int A_coherent_Integrand_first_order (const int *ndim, const cubareal xx[
     double Deltay = parameters.Deltay;
     double Q = parameters.Q;
     double z = parameters.z;
+    int WhichIntegrand = parameters.WhichIntegrand;
     
     // INTEGRAL RANGES //
-    double RangeFactor_b = 20.0;
-    double RangeFactor_r = 20.0;
+    double RangeFactor_b = 10.0;
+    double RangeFactor_r = 10.0;
 
     double bxmin = -RangeFactor_b*R;
     double bxmax = RangeFactor_b*R;
@@ -115,12 +301,93 @@ static int A_coherent_Integrand_first_order (const int *ndim, const cubareal xx[
     // DEFINING JACOBIAN //
     double Jacobian = (bxmax-bxmin)*(bymax-bymin)*(rxmax-rxmin)*(rymax-rymin);
 
-    // SEPERATING INTEGRANDS INTO REAL AND IMAG PART //
-    ff[0] = Jacobian / (4.0*M_PI) * A_coherent_integrand_Function_first_order::Trans_real(Q,bx,by,rx,ry,Deltax,Deltay,z);
-    ff[1] = Jacobian / (4.0*M_PI) * A_coherent_integrand_Function_first_order::Trans_imag(Q,bx,by,rx,ry,Deltax,Deltay,z);
+    // seperating integrand into real and imag parts and defining actual integrand function to be used for integration based on parameter from struct
+    switch (WhichIntegrand)
+    {
+    case 0:
+        ff[0] = Jacobian / (4.0*M_PI) * A_coherent_integrand_Function_first_order::Trans_real(Q,bx,by,rx,ry,Deltax,Deltay,z);
+        break;
+    case 1:
+        ff[0] = Jacobian / (4.0*M_PI) * A_coherent_integrand_Function_first_order::Trans_imag(Q,bx,by,rx,ry,Deltax,Deltay,z);
+        break;
+    case 2:
+        ff[0] = Jacobian / (4.0*M_PI) * A_coherent_integrand_Function_first_order::Longi_real(Q,bx,by,rx,ry,Deltax,Deltay,z);
+        break;
+    case 3:
+        ff[0] = Jacobian / (4.0*M_PI) * A_coherent_integrand_Function_first_order::Longi_imag(Q,bx,by,rx,ry,Deltax,Deltay,z);
+        break;
+    default:
+        std::cout << "No Integrand function for this parameter." << std::endl;
+        // have to figure out a way to stop integration function
+        break;
+    }
 
-    ff[2] = Jacobian / (4.0*M_PI) * A_coherent_integrand_Function_first_order::Longi_real(Q,bx,by,rx,ry,Deltax,Deltay,z);
-    ff[3] = Jacobian / (4.0*M_PI) * A_coherent_integrand_Function_first_order::Longi_imag(Q,bx,by,rx,ry,Deltax,Deltay,z);
+    return 0;
+}
+
+
+static int A_coherent_Integrand_first_order_UsingBetweenRootsCalc (const int *ndim, const cubareal xx[], const int *ncomp, cubareal ff[], void *userdata)
+{
+    // GATHERING PARAMETERS FROM STRUCT //
+    USERDATA parameters = *(USERDATA *) userdata;
+
+    double Deltax = parameters.Deltax;
+    double Deltay = parameters.Deltay;
+    double Q = parameters.Q;
+    double z = parameters.z;
+    int WhichIntegrand = parameters.WhichIntegrand;
+    double bmin = parameters.bmin;
+    double bmax = parameters.bmax;
+    
+    // INTEGRAL RANGES //
+    double RangeFactor_r = 5.0;
+
+    double bxmin = bmin;
+    double bxmax = bmax;
+
+    double bymin = bmin;
+    double bymax = bmax;
+
+    double rxmin = -RangeFactor_r*R; // TODO Check r range (maybe depending on model)
+    double rxmax = RangeFactor_r*R;
+
+    double rymin = -RangeFactor_r*R;
+    double rymax = RangeFactor_r*R;
+
+    // DEFINING COORDINATE TRANSFORMS FOR CORRECT INTEGRATION RANGE //
+    double bx = bxmin+(bxmax-bxmin)*xx[0];
+    double by = bymin+(bymax-bymin)*xx[1];
+
+    double rx = rxmin+(rxmax-rxmin)*xx[2];
+    double ry = rymin+(rymax-rymin)*xx[3];
+    
+    // DEFINING JACOBIAN //
+    double Jacobian = (bxmax-bxmin)*(bymax-bymin)*(rxmax-rxmin)*(rymax-rymin);
+
+    // seperating integrand into real and imag parts and defining actual integrand function to be used for integration based on parameter from struct
+    switch (WhichIntegrand)
+    {
+    case 0:
+        ff[0] = Jacobian / (4.0*M_PI) * A_coherent_integrand_Function_first_order::Trans_real(Q,bx,by,rx,ry,Deltax,Deltay,z);
+        //std::cout << "0 " << A_coherent_integrand_Function_first_order::Trans_real(Q,bmin,by,rx,ry,Deltax,Deltay,z) << " " << A_coherent_integrand_Function_first_order::Trans_real(Q,bmax,by,rx,ry,Deltax,Deltay,z) << std::endl;
+        break;
+    case 1:
+        ff[0] = Jacobian / (4.0*M_PI) * A_coherent_integrand_Function_first_order::Trans_imag(Q,bx,by,rx,ry,Deltax,Deltay,z);
+        //std::cout << "1 " << A_coherent_integrand_Function_first_order::Trans_imag(Q,bmin,by,rx,ry,Deltax,Deltay,z) << " " << A_coherent_integrand_Function_first_order::Trans_imag(Q,bmax,by,rx,ry,Deltax,Deltay,z) << std::endl;
+        break;
+    case 2:
+        ff[0] = Jacobian / (4.0*M_PI) * A_coherent_integrand_Function_first_order::Longi_real(Q,bx,by,rx,ry,Deltax,Deltay,z);
+        //std::cout << "2 " << A_coherent_integrand_Function_first_order::Longi_real(Q,bmin,by,rx,ry,Deltax,Deltay,z) << " " << A_coherent_integrand_Function_first_order::Longi_real(Q,bmax,by,rx,ry,Deltax,Deltay,z) << std::endl;
+        break;
+    case 3:
+        ff[0] = Jacobian / (4.0*M_PI) * A_coherent_integrand_Function_first_order::Longi_imag(Q,bx,by,rx,ry,Deltax,Deltay,z);
+        //std::cout << "3 " << A_coherent_integrand_Function_first_order::Longi_imag(Q,bmin,by,rx,ry,Deltax,Deltay,z) << " " << A_coherent_integrand_Function_first_order::Longi_imag(Q,bmax,by,rx,ry,Deltax,Deltay,z) << std::endl;
+        break;
+    default:
+        std::cout << "No Integrand funciton for this parameter." << std::endl;
+        // have to figure out a way to stop integration function
+        break;
+    }
 
     return 0;
 }
@@ -135,10 +402,11 @@ static int A_incoherent_Integrand(const int *ndim, const cubareal xx[], const in
     double Q = parameters.Q;
     double z = parameters.z;
     double zbar = parameters.z;
+    int WhichIntegrand = parameters.WhichIntegrand;
 
     // INTEGRAL RANGES //
-    double RangeFactor_b = 15.0;
-    double RangeFactor_r = 15.0;
+    double RangeFactor_b = 5.0;
+    double RangeFactor_r = 10.0;
 
     double bxmin = -RangeFactor_b*R;
     double bxmax = RangeFactor_b*R;
@@ -176,19 +444,33 @@ static int A_incoherent_Integrand(const int *ndim, const cubareal xx[], const in
     // DEFINING JACOBIAN //
     double Jacobian = (bxmax-bxmin)*(bymax-bymin)*(rxmax-rxmin)*(rymax-rymin)*(bbarxmax-bbarxmin)*(bbarymax-bbarymin)*(rbarxmax-rbarxmin)*(rbarymax-rbarymin);
 
-    // SEPERATING INTEGRANDS INTO REAL AND IMAG PART //
-    ff[0] = Jacobian / (4.0*M_PI) / (4.0*M_PI) * A_incoherent_Integrand_Function::Trans_real(Q,bx,by,bbarx,bbary,rx,ry,rbarx,rbary,Deltax,Deltay,z,zbar);
-    ff[1] = Jacobian / (4.0*M_PI) / (4.0*M_PI) * A_incoherent_Integrand_Function::Trans_imag(Q,bx,by,bbarx,bbary,rx,ry,rbarx,rbary,Deltax,Deltay,z,zbar);
-
-    ff[2] = Jacobian / (4.0*M_PI) / (4.0*M_PI) * A_incoherent_Integrand_Function::Longi_real(Q,bx,by,bbarx,bbary,rx,ry,rbarx,rbary,Deltax,Deltay,z,zbar);
-    ff[3] = Jacobian / (4.0*M_PI) / (4.0*M_PI) * A_incoherent_Integrand_Function::Longi_imag(Q,bx,by,bbarx,bbary,rx,ry,rbarx,rbary,Deltax,Deltay,z,zbar);
+    // seperating integrand into real and imag parts and defining actual integrand function to be used for integration based on parameter from struct
+    switch (WhichIntegrand)
+    {
+    case 0:
+        ff[0] = Jacobian / (4.0*M_PI) / (4.0*M_PI) * A_incoherent_Integrand_Function::Trans_real(Q,bx,by,bbarx,bbary,rx,ry,rbarx,rbary,Deltax,Deltay,z,zbar);
+        break;
+    case 1:
+        ff[0] = Jacobian / (4.0*M_PI) / (4.0*M_PI) * A_incoherent_Integrand_Function::Trans_imag(Q,bx,by,bbarx,bbary,rx,ry,rbarx,rbary,Deltax,Deltay,z,zbar);
+        break;
+    case 2:
+        ff[0] = Jacobian / (4.0*M_PI) / (4.0*M_PI) * A_incoherent_Integrand_Function::Longi_real(Q,bx,by,bbarx,bbary,rx,ry,rbarx,rbary,Deltax,Deltay,z,zbar);
+        break;
+    case 3:
+        ff[0] = Jacobian / (4.0*M_PI) / (4.0*M_PI) * A_incoherent_Integrand_Function::Longi_imag(Q,bx,by,bbarx,bbary,rx,ry,rbarx,rbary,Deltax,Deltay,z,zbar);
+        break;
+    default:
+        std::cout << "No Integrand function for this parameter." << std::endl;
+        // have to figure out a way to stop integration function
+        break;
+    }
 
     return 0;
 }
 
 
 
-std::vector<double> dsigma_dt_coherent (USERDATA &parameters)
+std::vector<double> dsigmabydt_coherent (USERDATA &parameters)
 {
     std::vector<double> Return(2);
 
@@ -197,35 +479,58 @@ std::vector<double> dsigma_dt_coherent (USERDATA &parameters)
         
     // VALUES AND ERRORS //
     int Num_of_Dimensions = 4;
-    int Num_of_Integrals = 4;
+    int Num_of_Integrals = 1;
     int Num_of_Points = 1;
     double epsrel = 1e-3;
     double epsabs = 1e-12;
     int flags1 = 0;
     int flags2 = 4;
-    int seed = 0;
+    int seed = time(0);
 
     cubareal Value[Num_of_Integrals], Error[Num_of_Integrals], Probability[Num_of_Integrals];
 
-    Suave(Num_of_Dimensions, Num_of_Integrals,
-        A_coherent_Integrand, &parameters, Num_of_Points,
-        epsrel, epsabs,
-        flags1 | flags2, seed,
-        MINEVAL, MAXEVAL,
-        NNEW, NMIN,
-        FLATNESS, STATEFILE, SPIN,
-        &NumberOfRegions,&NumberOfEvaluations, &ErrorStatus, 
-        Value, Error, Probability
-    );
-
+    double IntegrationResults[4];
+    for (parameters.WhichIntegrand=0; parameters.WhichIntegrand<=3; parameters.WhichIntegrand++){
+        if (UseSuave) //UseSuave for Suave integration, UseSuave for Cuhre integration
+        {
+            Suave(Num_of_Dimensions, Num_of_Integrals,
+                A_coherent_Integrand, &parameters, Num_of_Points,
+                epsrel, epsabs,
+                flags1 | flags2, seed,
+                MINEVAL, MAXEVAL,
+                NNEW, NMIN,
+                FLATNESS, STATEFILE, SPIN,
+                &NumberOfRegions,&NumberOfEvaluations, &ErrorStatus, 
+                Value, Error, Probability
+            );
+            //std::cout << "ErrorStatus dsigmabydt_coherent " << ErrorStatus << std::endl;
+            // saving integration result of each run in list for later use
+            IntegrationResults[parameters.WhichIntegrand] = Value[0];
+        }
+        else
+        {
+            Cuhre(Num_of_Dimensions, Num_of_Integrals,
+                A_coherent_Integrand, &parameters, Num_of_Points,
+                epsrel, epsabs,
+                flags1 | flags2,
+                MINEVAL, MAXEVAL,
+                KEY, STATEFILE, SPIN,
+                &NumberOfRegions, &NumberOfEvaluations, &ErrorStatus,
+                Value, Error, Probability
+            );
+            IntegrationResults[parameters.WhichIntegrand] = Value[0];
+        }
+    }
+    
     // Return0 returns Cross section for transverse and Return1 longitudinal and conversion to nb
-    Return[0] = 1.0/16.0/M_PI*(Value[0]*Value[0]+Value[1]*Value[1]) * 1.0e7;
-    Return[1] = 1.0/16.0/M_PI*(Value[2]*Value[2]+Value[3]*Value[3]) * 1.0e7;
+    Return[0] = 1.0/16.0/M_PI*(IntegrationResults[0]*IntegrationResults[0]+IntegrationResults[1]*IntegrationResults[1]) * (GeVm1Tofm*GeVm1Tofm)*fm2TonB;
+    Return[1] = 1.0/16.0/M_PI*(IntegrationResults[2]*IntegrationResults[2]+IntegrationResults[3]*IntegrationResults[3]) * (GeVm1Tofm*GeVm1Tofm)*fm2TonB;
 
     return Return;
 }
 
-std::vector<double> dsigma_dt_coherent_first_oder (USERDATA &parameters)
+
+std::vector<double> dsigmabydt_coherent_polar (USERDATA &parameters)
 {
     std::vector<double> Return(2);
 
@@ -233,37 +538,280 @@ std::vector<double> dsigma_dt_coherent_first_oder (USERDATA &parameters)
     int NumberOfRegions,NumberOfEvaluations,ErrorStatus;
         
     // VALUES AND ERRORS //
-    int Num_of_Dimensions = 4;
-    int Num_of_Integrals = 4;
+    int Num_of_Dimensions = 3;
+    int Num_of_Integrals = 1;
     int Num_of_Points = 1;
     double epsrel = 1e-3;
     double epsabs = 1e-12;
     int flags1 = 0;
     int flags2 = 4;
-    int seed = 0;
+    int seed = time(0);
 
     cubareal Value[Num_of_Integrals], Error[Num_of_Integrals], Probability[Num_of_Integrals];
 
-    Suave(Num_of_Dimensions, Num_of_Integrals,
-        A_coherent_Integrand_first_order, &parameters, Num_of_Points,
-        epsrel, epsabs,
-        flags1 | flags2, seed,
-        MINEVAL, MAXEVAL,
-        NNEW, NMIN,
-        FLATNESS, STATEFILE, SPIN,
-        &NumberOfRegions,&NumberOfEvaluations, &ErrorStatus, 
-        Value, Error, Probability
-    );
-
+    double IntegrationResults[4];
+    for (parameters.WhichIntegrand=0; parameters.WhichIntegrand<=3; parameters.WhichIntegrand++){
+        if (UseSuave) //UseSuave for Suave integration, UseSuave for Cuhre integration
+        {
+            Suave(Num_of_Dimensions, Num_of_Integrals,
+                A_coherent_Integrand_polar, &parameters, Num_of_Points,
+                epsrel, epsabs,
+                flags1 | flags2, seed,
+                MINEVAL, MAXEVAL,
+                NNEW, NMIN,
+                FLATNESS, STATEFILE, SPIN,
+                &NumberOfRegions,&NumberOfEvaluations, &ErrorStatus, 
+                Value, Error, Probability
+            );
+            //std::cout << "ErrorStatus dsigmabydt_coherent " << ErrorStatus << std::endl;
+            // saving integration result of each run in list for later use
+            IntegrationResults[parameters.WhichIntegrand] = Value[0];
+        }
+        else
+        {
+            Cuhre(Num_of_Dimensions, Num_of_Integrals,
+                A_coherent_Integrand_polar, &parameters, Num_of_Points,
+                epsrel, epsabs,
+                flags1 | flags2,
+                MINEVAL, MAXEVAL,
+                KEY, STATEFILE, SPIN,
+                &NumberOfRegions, &NumberOfEvaluations, &ErrorStatus,
+                Value, Error, Probability
+            );
+            IntegrationResults[parameters.WhichIntegrand] = Value[0];
+        }
+    }
+    
     // Return0 returns Cross section for transverse and Return1 longitudinal and conversion to nb
-    Return[0] = 1.0/16.0/M_PI*(Value[0]*Value[0]+Value[1]*Value[1]) * 1.0e7;
-    Return[1] = 1.0/16.0/M_PI*(Value[2]*Value[2]+Value[3]*Value[3]) * 1.0e7;
+    Return[0] = 1.0/16.0/M_PI*(IntegrationResults[0]*IntegrationResults[0]+IntegrationResults[1]*IntegrationResults[1]) * (GeVm1Tofm*GeVm1Tofm)*fm2TonB;
+    Return[1] = 1.0/16.0/M_PI*(IntegrationResults[2]*IntegrationResults[2]+IntegrationResults[3]*IntegrationResults[3]) * (GeVm1Tofm*GeVm1Tofm)*fm2TonB;
 
     return Return;
 }
 
 
-std::vector<double> dsigma_dt_incoherent (USERDATA &parameters)
+double dsigmabydt_coherent_InbetweenRoots (USERDATA &parameters)
+{
+    // PROCEDURE MONITOR //
+    int NumberOfRegions,NumberOfEvaluations,ErrorStatus;
+        
+    // VALUES AND ERRORS //
+    int Num_of_Dimensions = 4;
+    int Num_of_Integrals = 1;
+    int Num_of_Points = 1;
+    double epsrel = 1e-3;
+    double epsabs = 1e-12;
+    int flags1 = 0;
+    int flags2 = 4;
+    int seed = time(0);
+
+    cubareal Value[Num_of_Integrals], Error[Num_of_Integrals], Probability[Num_of_Integrals];
+
+    
+    if (UseSuave) //UseSuave for Suave integration, UseSuave for Cuhre integration
+    {
+        Suave(Num_of_Dimensions, Num_of_Integrals,
+            A_coherent_Integrand_UsingBetweenRootsCalc, &parameters, Num_of_Points,
+            epsrel, epsabs,
+            flags1 | flags2, seed,
+            MINEVAL, MAXEVAL,
+            NNEW, NMIN,
+            FLATNESS, STATEFILE, SPIN,
+            &NumberOfRegions,&NumberOfEvaluations, &ErrorStatus, 
+            Value, Error, Probability
+        );
+    }
+    else
+    {
+        Cuhre(Num_of_Dimensions, Num_of_Integrals,
+            A_coherent_Integrand_UsingBetweenRootsCalc, &parameters, Num_of_Points,
+            epsrel, epsabs,
+            flags1 | flags2,
+            MINEVAL, MAXEVAL,
+            KEY, STATEFILE, SPIN,
+            &NumberOfRegions, &NumberOfEvaluations, &ErrorStatus,
+            Value, Error, Probability
+        );
+    }
+
+    // Returning result of integration
+    return Value[0];
+}
+
+std::vector<double> dsigmabydt_coherent_UsingBetweenRootCalc (USERDATA &parameters)
+{   
+    std::vector<double> Return(2);
+    std::vector<double> Result(4);
+
+    int OneWayRange = 6;
+    for (int n=-OneWayRange; n<=OneWayRange; n++)
+    {
+        for (parameters.WhichIntegrand=0; parameters.WhichIntegrand<=3; parameters.WhichIntegrand++)
+        {
+            FindRoot_Coherent(n,parameters);
+            Result[parameters.WhichIntegrand] += dsigmabydt_coherent_InbetweenRoots(parameters);
+            //std::cout << Result[parameters.WhichIntegrand] << "\t";
+        }
+        //std::cout << std::endl;
+    }
+
+    Return[0] = 1.0/16.0/M_PI*(Result[0]*Result[0]+Result[1]*Result[1]) * (GeVm1Tofm*GeVm1Tofm)*fm2TonB;
+    Return[1] = 1.0/16.0/M_PI*(Result[2]*Result[2]+Result[3]*Result[3]) * (GeVm1Tofm*GeVm1Tofm)*fm2TonB;
+
+    return Return;
+}
+
+
+std::vector<double> dsigmabydt_coherent_first_order (USERDATA &parameters)
+{
+    // PROCEDURE MONITOR //
+    int NumberOfRegions,NumberOfEvaluations,ErrorStatus;
+        
+    // VALUES AND ERRORS //
+    int Num_of_Dimensions = 4;
+    int Num_of_Integrals = 1;
+    int Num_of_Points = 1;
+    double epsrel = 1e-3;
+    double epsabs = 1e-12;
+    int flags1 = 0;
+    int flags2 = 4;
+    int seed = time(0);
+
+    cubareal Value[Num_of_Integrals], Error[Num_of_Integrals], Probability[Num_of_Integrals];
+
+    double IntegrationResults[4];
+    for (parameters.WhichIntegrand=0; parameters.WhichIntegrand<=3; parameters.WhichIntegrand++){
+        if (UseSuave) // UseSuave for Suave integration, UseSuave for Cuhre integration
+        {
+            Suave(Num_of_Dimensions, Num_of_Integrals,
+                A_coherent_Integrand_first_order, &parameters, Num_of_Points,
+                epsrel, epsabs,
+                flags1 | flags2, seed,
+                MINEVAL, MAXEVAL,
+                NNEW, NMIN,
+                FLATNESS, STATEFILE, SPIN,
+                &NumberOfRegions,&NumberOfEvaluations, &ErrorStatus, 
+                Value, Error, Probability
+            );
+            //std::cout << "ErrorStatus dsigmabydt_coherent " << ErrorStatus << std::endl;
+            // saving integration result of each run in list for later use
+            IntegrationResults[parameters.WhichIntegrand] = Value[0];
+        }
+        else
+        {
+            Cuhre(Num_of_Dimensions, Num_of_Integrals,
+                A_coherent_Integrand_first_order, &parameters, Num_of_Points,
+                epsrel, epsabs,
+                flags1 | flags2,
+                MINEVAL, MAXEVAL,
+                KEY, STATEFILE, SPIN,
+                &NumberOfRegions, &NumberOfEvaluations, &ErrorStatus,
+                Value, Error, Probability
+            );
+            IntegrationResults[parameters.WhichIntegrand] = Value[0];
+        }
+    }
+
+    std::vector<double> Return(2);
+    // Return0 returns Cross section for transverse and Return1 longitudinal and conversion to nb
+    Return[0] = 1.0/16.0/M_PI*(IntegrationResults[0]*IntegrationResults[0]+IntegrationResults[1]*IntegrationResults[1]) * (GeVm1Tofm*GeVm1Tofm)*fm2TonB;
+    Return[1] = 1.0/16.0/M_PI*(IntegrationResults[2]*IntegrationResults[2]+IntegrationResults[3]*IntegrationResults[3]) * (GeVm1Tofm*GeVm1Tofm)*fm2TonB;
+
+
+    return Return;
+}
+
+
+namespace dsigmabydt_coherent_analytical_first_order
+{
+    double Trans (double Q, double Deltax, double Deltay, double z)
+    {
+        std::complex<double> Amplitude = -1.0i * (-A_Q) * std::sqrt(2.0*m_Q_c*N_c) * e_Q * e * (-0.25*sigma_0*Q_s_0*Q_s_0) * exp(-R*R*(Deltax*Deltax+Deltay*Deltay)/2.0) * 2.0 / std::pow(epsilonFunc(Q,z),4.0); // GeVm2
+        return std::pow(std::abs(Amplitude),2.0) / 16.0 / M_PI * (GeVm1Tofm*GeVm1Tofm)*fm2TonB; // GeVm2 nb
+    }
+
+    double Longi (double Q, double Deltax, double Deltay, double z)
+    {
+        std::complex<double> Amplitude = -1.0i * (-A_Q) * std::sqrt(2.0*N_c/m_Q_c) * e_Q * e * Q * (-0.25*sigma_0*Q_s_0*Q_s_0) * exp(-R*R*(Deltax*Deltax+Deltay*Deltay)/2.0) * 1.0 / std::pow(epsilonFunc(Q,z),4.0); //GeVm2
+        return std::pow(std::abs(Amplitude),2.0) / 16.0 / M_PI * (GeVm1Tofm*GeVm1Tofm)*fm2TonB; // GeVm2 nb
+    }
+}
+
+
+double dsigmabydt_coherent_first_order_InbetweenRoots (USERDATA &parameters)
+{
+    // PROCEDURE MONITOR //
+    int NumberOfRegions,NumberOfEvaluations,ErrorStatus;
+        
+    // VALUES AND ERRORS //
+    int Num_of_Dimensions = 4;
+    int Num_of_Integrals = 1;
+    int Num_of_Points = 1;
+    double epsrel = 1e-3;
+    double epsabs = 1e-12;
+    int flags1 = 0;
+    int flags2 = 4;
+    int seed = time(0);
+
+    cubareal Value[Num_of_Integrals], Error[Num_of_Integrals], Probability[Num_of_Integrals];
+
+    
+    if (UseSuave) //UseSuave for Suave integration, UseSuave for Cuhre integration
+    {
+        Suave(Num_of_Dimensions, Num_of_Integrals,
+            A_coherent_Integrand_first_order_UsingBetweenRootsCalc, &parameters, Num_of_Points,
+            epsrel, epsabs,
+            flags1 | flags2, seed,
+            MINEVAL, MAXEVAL,
+            NNEW, NMIN,
+            FLATNESS, STATEFILE, SPIN,
+            &NumberOfRegions,&NumberOfEvaluations, &ErrorStatus, 
+            Value, Error, Probability
+        );
+    }
+    else
+    {
+        Cuhre(Num_of_Dimensions, Num_of_Integrals,
+            A_coherent_Integrand_first_order_UsingBetweenRootsCalc, &parameters, Num_of_Points,
+            epsrel, epsabs,
+            flags1 | flags2,
+            MINEVAL, MAXEVAL,
+            KEY, STATEFILE, SPIN,
+            &NumberOfRegions, &NumberOfEvaluations, &ErrorStatus,
+            Value, Error, Probability
+        );
+    }
+
+    // Returning result of integration
+    return Value[0];
+}
+
+
+std::vector<double> dsigmabydt_coherent_first_order_UsingBetweenRootCalc (USERDATA &parameters)
+{   
+    std::vector<double> Return(2);
+    std::vector<double> Result(4);
+
+    int OneWayRange = 2;
+    for (int n=-OneWayRange; n<=OneWayRange; n++)
+    {
+        for (parameters.WhichIntegrand=0; parameters.WhichIntegrand<=3; parameters.WhichIntegrand++)
+        {
+            FindRoot_Coherent(n,parameters);
+            Result[parameters.WhichIntegrand] += dsigmabydt_coherent_first_order_InbetweenRoots(parameters);
+            //std::cout << Result[parameters.WhichIntegrand] << "\t";
+        }
+        std::cout << std::endl;
+    }
+
+    Return[0] = 1.0/16.0/M_PI*(Result[0]*Result[0]+Result[1]*Result[1]) * (GeVm1Tofm*GeVm1Tofm)*fm2TonB;
+    Return[1] = 1.0/16.0/M_PI*(Result[2]*Result[2]+Result[3]*Result[3]) * (GeVm1Tofm*GeVm1Tofm)*fm2TonB;
+
+    return Return;
+}
+
+
+std::vector<double> dsigmabydt_incoherent (USERDATA &parameters)
 {
     std::vector<double> Return(2);
 
@@ -272,259 +820,68 @@ std::vector<double> dsigma_dt_incoherent (USERDATA &parameters)
         
     // VALUES AND ERRORS //
     int Num_of_Dimensions = 8;
-    int Num_of_Integrals = 4;
+    int Num_of_Integrals = 1;
     int Num_of_Points = 1;
     double epsrel = 1e-3;
     double epsabs = 1e-12;
     int flags1 = 0;
     int flags2 = 4;
-    int seed = 0;
+    int seed = time(0);
 
     cubareal Value[Num_of_Integrals],Error[Num_of_Integrals],Probability[Num_of_Integrals];
 
-    Suave(Num_of_Dimensions, Num_of_Integrals,
-        A_incoherent_Integrand, &parameters, Num_of_Points,
-        epsrel, epsabs,
-        flags1 | flags2, seed,
-        MINEVAL, MAXEVAL,
-        NNEW, NMIN,
-        FLATNESS, STATEFILE, SPIN,
-        &NumberOfRegions,&NumberOfEvaluations, &ErrorStatus, 
-        Value, Error, Probability
-    );
-
-    // Return0 returns Cross section for transverse and Return1 longitudinal and conversion to nb
-    Return[0] = 1.0/16.0/M_PI*std::sqrt(Value[0]*Value[0]+Value[1]*Value[1]) * 1.0e7;
-    Return[1] = 1.0/16.0/M_PI*std::sqrt(Value[2]*Value[2]+Value[3]*Value[3]) * 1.0e7;
+    double IntegrationResults[4];
+    for (parameters.WhichIntegrand=0; parameters.WhichIntegrand<=3; parameters.WhichIntegrand++){
+        if (UseSuave) // UseSuave for Suave integration, UseSuave for Cuhre integration
+        {
+            Suave(Num_of_Dimensions, Num_of_Integrals,
+                A_incoherent_Integrand, &parameters, Num_of_Points,
+                epsrel, epsabs,
+                flags1 | flags2, seed,
+                MINEVAL, MAXEVAL,
+                NNEW, NMIN,
+                FLATNESS, STATEFILE, SPIN,
+                &NumberOfRegions,&NumberOfEvaluations, &ErrorStatus, 
+                Value, Error, Probability
+            );
+            //std::cout << "ErrorStatus dsigmabydt_incoherent " << ErrorStatus << std::endl;
+            // saving integration result of each run in list for later use
+            IntegrationResults[parameters.WhichIntegrand] = Value[0];
+        }
+        else
+        {
+            Cuhre(Num_of_Dimensions, Num_of_Integrals,
+                A_incoherent_Integrand, &parameters, Num_of_Points,
+                epsrel, epsabs,
+                flags1 | flags2,
+                MINEVAL, MAXEVAL,
+                KEY, STATEFILE, SPIN,
+                &NumberOfRegions, &NumberOfEvaluations, &ErrorStatus,
+                Value, Error, Probability
+            );
+            IntegrationResults[parameters.WhichIntegrand] = Value[0];
+        }
+    }
     
+    
+    // Calculating Transverse ([1]) and Longitudinal ([2]) cross sections tand conversion to nb GeVm2
+    Return[0] = 1.0/16.0/M_PI*std::sqrt(IntegrationResults[0]*IntegrationResults[0]+IntegrationResults[1]*IntegrationResults[1]) * (GeVm1Tofm*GeVm1Tofm)*fm2TonB;
+    Return[1] = 1.0/16.0/M_PI*std::sqrt(IntegrationResults[2]*IntegrationResults[2]+IntegrationResults[3]*IntegrationResults[3]) * (GeVm1Tofm*GeVm1Tofm)*fm2TonB;
+        
     // Calculating Coherent Cross section for calculation of variance
     std::vector<double> CoherentReturn(2);
-    CoherentReturn = dsigma_dt_coherent(parameters);
-
-    // Calculating incoherent cross section T,L
-    Return[0] = Return[0] - CoherentReturn[0];
-    Return[1] = Return[1] - CoherentReturn[1];
-
-    // Printing out terms of incoherent cross section, to test
-    std::cout << "========\nFirst term is:\tT: " << Value[0] << "+i" << Value[1] << std::endl;
-    std::cout << "\t\tL: " << Value[2] << "+i" << Value[3] << std::endl;
-
-    std::cout << "========\nSecond term is:\tT: " << CoherentReturn[0] << std::endl;
-    std::cout << "\t\tL: " << CoherentReturn[1] << std::endl;
-
-    return Return;
-}
+    CoherentReturn = dsigmabydt_coherent(parameters);
 
 /*
-struct IntegrationParameters
-{
-    double Q;
-    double Deltax;
-    double Deltay;
-    double z;
-    double bx;
-    double by;
-};
-
-static int rIntegrand_coherent (const int *ndim, const cubareal xx[], const int *ncomp, cubareal ff[], void *userdata)
-{
-    // GATHERING PARAMETERS FROM STRUCT
-    IntegrationParameters parameters = *(IntegrationParameters *) userdata;
-    double Q = parameters.Q;
-    double Deltax = parameters.Deltax;
-    double Deltay = parameters.Deltay;
-    double z = parameters.z;
-    double bx = parameters.bx;
-    double by = parameters.by;
-    
-    // Integration ranges
-    double RangeFactor = 20.0;
-    double rxmax = RangeFactor*R;
-    double rymax = RangeFactor*R;
-    double rxmin = -RangeFactor*R;
-    double rymin = -RangeFactor*R;
-
-    double rx = rxmin+(rxmax-rxmin)*xx[0];
-    double ry = rymin+(rymax-rymin)*xx[1];
-
-    double Jacobian = (rxmax-rxmin)*(rymax-rymin);
-
-    ff[0] = Jacobian / (4.0*M_PI) * A_coherent_integrand_Function_first_order::Trans_real(Q,bx,by,rx,ry,Deltax,Deltay,z);
-    ff[1] = Jacobian / (4.0*M_PI) * A_coherent_integrand_Function_first_order::Trans_imag(Q,bx,by,rx,ry,Deltax,Deltay,z);
-    ff[2] = Jacobian / (4.0*M_PI) * A_coherent_integrand_Function_first_order::Longi_real(Q,bx,by,rx,ry,Deltax,Deltay,z);
-    ff[3] = Jacobian / (4.0*M_PI) * A_coherent_integrand_Function_first_order::Longi_imag(Q,bx,by,rx,ry,Deltax,Deltay,z);
-
-    return 0;
-}
-
-
-std::vector<double> Make_r_Integration (IntegrationParameters &parameters)
-{
-    std::vector<double> Return(2);
-
-    // PROCEDURE MONITOR //
-    int NumberOfRegions,NumberOfEvaluations,ErrorStatus;
-        
-    // VALUES AND ERRORS //
-    int Num_of_Dimensions = 2;
-    int Num_of_Integrals = 4;
-    int Num_of_Points = 1;
-    double epsrel = 1e-3;
-    double epsabs = 1e-12;
-    int flags1 = 0;
-    int flags2 = 4;
-    int seed = 0;
-
-    cubareal Value[Num_of_Integrals],Error[Num_of_Integrals],Probability[Num_of_Integrals];
-
-    Suave(Num_of_Dimensions, Num_of_Integrals,
-        A_incoherent_Integrand, &parameters, Num_of_Points,
-        epsrel, epsabs,
-        flags1 | flags2, seed,
-        MINEVAL, MAXEVAL,
-        NNEW, NMIN,
-        FLATNESS, STATEFILE, SPIN,
-        &NumberOfRegions,&NumberOfEvaluations, &ErrorStatus, 
-        Value, Error, Probability
-    );
-
-    
-}
+    // Printing out terms of incoherent cross section, to test
+    std::cout << "========\nFirst term is:\tT: " << Return[0] << std::endl;
+    std::cout << "\t\tL: " << Return[1] << std::endl;
+    std::cout << "========\nSecond term is:\tT: " << CoherentReturn[0] << std::endl;
+    std::cout << "\t\tL: " << CoherentReturn[1] << std::endl;
 */
-
-std::vector<double> Integration_bitbybit (USERDATA &parameters) 
-
-{
-    std::vector<double> Return(2);
-
-    // PROCEDURE MONITOR //
-    int NumberOfRegions,NumberOfEvaluations,ErrorStatus;
-        
-    // VALUES AND ERRORS //
-    int Num_of_Dimensions = 8;
-    int Num_of_Integrals = 4;
-    int Num_of_Points = 1;
-    double epsrel = 1e-3;
-    double epsabs = 1e-12;
-    int flags1 = 0;
-    int flags2 = 4;
-    int seed = 0;
-
-    cubareal Value[Num_of_Integrals],Error[Num_of_Integrals],Probability[Num_of_Integrals];
-
-    Suave(Num_of_Dimensions, Num_of_Integrals,
-        A_incoherent_Integrand, &parameters, Num_of_Points,
-        epsrel, epsabs,
-        flags1 | flags2, seed,
-        MINEVAL, MAXEVAL,
-        NNEW, NMIN,
-        FLATNESS, STATEFILE, SPIN,
-        &NumberOfRegions,&NumberOfEvaluations, &ErrorStatus, 
-        Value, Error, Probability
-    );
-
-    // Return0 returns Cross section for transverse and Return1 longitudinal and conversion to nb
-    Return[0] = 1.0/16.0/M_PI*std::sqrt(Value[0]*Value[0]+Value[1]*Value[1]) * 1.0e7;
-    Return[1] = 1.0/16.0/M_PI*std::sqrt(Value[2]*Value[2]+Value[3]*Value[3]) * 1.0e7;
-    
-    // Calculating Coherent Cross section for calculation of variance
-    std::vector<double> CoherentReturn(2);
-    CoherentReturn = dsigma_dt_coherent(parameters);
-
     // Calculating incoherent cross section T,L
     Return[0] = Return[0] - CoherentReturn[0];
     Return[1] = Return[1] - CoherentReturn[1];
-
-    // Printing out terms of incoherent cross section, to test
-    std::cout << "========\nFirst term is:\tT: " << Value[0] << "+i" << Value[1] << std::endl;
-    std::cout << "\t\tL: " << Value[2] << "+i" << Value[3] << std::endl;
-
-    std::cout << "========\nSecond term is:\tT: " << CoherentReturn[0] << std::endl;
-    std::cout << "\t\tL: " << CoherentReturn[1] << std::endl;
-
-    return Return;
-}
-
-
-static int A_full (const int *ndim, const cubareal xx[], const int *ncomp, cubareal ff[], void *userdata)
-{
-    // GATHERING PARAMETERS FROM STRUCT //
-    USERDATA parameters = *(USERDATA *) userdata;
-
-    double Deltax = parameters.Deltax;
-    double Deltay = parameters.Deltay;
-    double Q = parameters.Q;
-    double z = parameters.z;
-    
-    // INTEGRAL RANGES //
-    double RangeFactor_b = 20.0;
-    double RangeFactor_r = 20.0;
-
-    double bxmin = -RangeFactor_b*R;
-    double bxmax = RangeFactor_b*R;
-
-    double bymin = -RangeFactor_b*R;
-    double bymax = RangeFactor_b*R;
-
-    double rxmin = -RangeFactor_r*R; // TODO Check r range (maybe depending on model)
-    double rxmax = RangeFactor_r*R;
-
-    double rymin = -RangeFactor_r*R;
-    double rymax = RangeFactor_r*R;
-
-    // DEFINING COORDINATE TRANSFORMS FOR CORRECT INTEGRATION RANGE //
-    double bx = bxmin+(bxmax-bxmin)*xx[0];
-    double by = bymin+(bymax-bymin)*xx[1];
-
-    double rx = rxmin+(rxmax-rxmin)*xx[2];
-    double ry = rymin+(rymax-rymin)*xx[3];
-    
-    // DEFINING JACOBIAN //
-    double Jacobian = (bxmax-bxmin)*(bymax-bymin)*(rxmax-rxmin)*(rymax-rymin);
-
-    // SEPERATING INTEGRANDS INTO REAL AND IMAG PART //
-    ff[0] = Jacobian * Integrand_full::Trans_real(Q,bx,by,rx,ry,Deltax,Deltay,z);
-    ff[1] = Jacobian * Integrand_full::Trans_imag(Q,bx,by,rx,ry,Deltax,Deltay,z);
-
-    ff[2] = Jacobian * Integrand_full::Longi_real(Q,bx,by,rx,ry,Deltax,Deltay,z);
-    ff[3] = Jacobian * Integrand_full::Longi_imag(Q,bx,by,rx,ry,Deltax,Deltay,z);
-
-    return 0;
-}
-
-std::vector<double> dsigma_dt_full (USERDATA &parameters)
-{
-    std::vector<double> Return(2);
-
-    // PROCEDURE MONITOR //
-    int NumberOfRegions,NumberOfEvaluations,ErrorStatus;
-        
-    // VALUES AND ERRORS //
-    int Num_of_Dimensions = 4;
-    int Num_of_Integrals = 4;
-    int Num_of_Points = 1;
-    double epsrel = 1e-3;
-    double epsabs = 1e-12;
-    int flags1 = 0;
-    int flags2 = 4;
-    int seed = 1337;
-
-    cubareal Value[Num_of_Integrals], Error[Num_of_Integrals], Probability[Num_of_Integrals];
-
-    Suave(Num_of_Dimensions, Num_of_Integrals,
-        A_full, &parameters, Num_of_Points,
-        epsrel, epsabs,
-        flags1 | flags2, seed,
-        MINEVAL, MAXEVAL,
-        NNEW, NMIN,
-        FLATNESS, STATEFILE, SPIN,
-        &NumberOfRegions,&NumberOfEvaluations, &ErrorStatus, 
-        Value, Error, Probability
-    );
-
-    // Return0 returns Cross section for transverse and Return1 longitudinal and conversion to nb
-    Return[0] = 1.0/(16.0*M_PI)*(Value[0]*Value[0]+Value[1]*Value[1]) * 1.0e7;
-    Return[1] = 1.0/(16.0*M_PI)*(Value[2]*Value[2]+Value[3]*Value[3]) * 1.0e7;
 
     return Return;
 }
