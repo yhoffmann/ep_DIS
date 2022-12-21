@@ -38,6 +38,8 @@ using namespace std::complex_literals;
 int main(int argc, char** argv)
 {
     UseSuave = std::atoi(argv[5]);
+    if (UseSuave) {std::cout << "(Using Suave for numerical integration)" << std::endl;}
+    else {std::cout << "(Using Cuhre for numerical integration)" << std::endl;}
     Check_Commandline_Arguments(argc);
 
     USERDATA data;
@@ -70,12 +72,12 @@ int main(int argc, char** argv)
     std::cout << "Coherent Cross Section from between roots\nT: " << dsigmabydt_coherent_BetweenRoots_Result[0] << " \tL: " << dsigmabydt_coherent_BetweenRoots_Result[1] << std::endl;
     std::cout << "Coherent Cross Section with polar coordinate integration\nT: " << dsigmabydt_coherent_polar_Result[0] << " \tL: " << dsigmabydt_coherent_polar_Result[1] << std::endl;
     std::cout << "Karthesian/Polar:\nT: " << dsigmabydt_coherent_Result[0]/dsigmabydt_coherent_polar_Result[0] << " \tL: " << dsigmabydt_coherent_Result[1]/dsigmabydt_coherent_polar_Result[1] << std::endl;
-/*
+
     // Comparing first order analytical result with first order integrated result
     std::vector<double> dsigmabydt_coherent_analytical_first_order_result(2);
     std::vector<double> dsigmabydt_coherent_integrated_first_order_result(2);
     std::vector<double> dsigmabydt_coherent_integrated_first_order_result_UsingBetweenRootCalc(2);
-
+/*
     dsigmabydt_coherent_analytical_first_order_result[0] = dsigmabydt_coherent_analytical_first_order::Trans(data.Q,data.Deltax,data.Deltay,data.z);
     dsigmabydt_coherent_analytical_first_order_result[1] = dsigmabydt_coherent_analytical_first_order::Longi(data.Q,data.Deltax,data.Deltay,data.z);
     dsigmabydt_coherent_integrated_first_order_result = dsigmabydt_coherent_first_order(data);
@@ -88,5 +90,45 @@ int main(int argc, char** argv)
     std::cout << "N/NRs:\tT: " << dsigmabydt_coherent_integrated_first_order_result[0]/dsigmabydt_coherent_integrated_first_order_result_UsingBetweenRootCalc[0] << "\tL: " << dsigmabydt_coherent_integrated_first_order_result[1]/dsigmabydt_coherent_integrated_first_order_result_UsingBetweenRootCalc[1] << std::endl;
     std::cout << "A/NRs:\tT: " << dsigmabydt_coherent_analytical_first_order_result[0]/dsigmabydt_coherent_integrated_first_order_result_UsingBetweenRootCalc[0] << "\tL: " << dsigmabydt_coherent_analytical_first_order_result[1]/dsigmabydt_coherent_integrated_first_order_result_UsingBetweenRootCalc[1] << std::endl;
 */
+
+    // Comparing first order analytical and numerical results plot
+    std::ofstream OutStream;
+    std::string filename = "Data/FirstOrderResultsAnalyticalVsNumerical.txt";
+    OutStream.open(filename);
+    // Closing program if it cannot open the file
+    if (!OutStream.is_open()) exit(0);
+
+    std::vector<double> QRange = {0.01, 0.02, 0.03, 0.05, 0.1, 0.15, 0.20, 0.3, 0.33, 0.37, 0.4};
+    std::vector<double> DeltaRange = {0.001, 0.01, 0.02, 0.05, 0.1, 0.3, 0.5, 0.7, 1.0, 1.2, 1.5, 1.7, 2.0, 2.3, 2.7, 3.0};
+
+    OutStream << "#Q, Delta, Ana T,L, Num T,L;   " << QRange.size() << " values of Q (for Gnuplot)" << std::endl;
+    OutStream << "#1, 2,         3,4,     5,6" << std::endl;
+    for (double &QValue : QRange)
+    {
+        OutStream << "'" << "Q=" << QValue << "'" << std::endl;
+        for (double &DeltaValue : DeltaRange)
+        {
+            // Saving Q and Delta values in struct
+            data.Q = QValue;
+            data.Deltax = DeltaValue;
+
+            // Calculating Cross sections with data from struct
+            dsigmabydt_coherent_analytical_first_order_result[0] = dsigmabydt_coherent_analytical_first_order::Trans(data.Q,data.Deltax,data.Deltay,data.z);
+            dsigmabydt_coherent_analytical_first_order_result[1] = dsigmabydt_coherent_analytical_first_order::Longi(data.Q,data.Deltax,data.Deltay,data.z);
+            dsigmabydt_coherent_integrated_first_order_result = dsigmabydt_coherent_first_order(data);
+
+            // Outputting calculated cross sections and corresponding Q and Delta to file
+            OutStream << QValue << " " << DeltaValue << " " << dsigmabydt_coherent_analytical_first_order_result[0] << " " << dsigmabydt_coherent_analytical_first_order_result[1] << " " << dsigmabydt_coherent_integrated_first_order_result[0] << " " << dsigmabydt_coherent_integrated_first_order_result[1] << std::endl;
+
+            // Prodedure monitor
+            std::cout << QValue << " " << DeltaValue << std::endl; 
+        }
+        // Two break lines after each data set for single value of Q
+        OutStream << "\n" << std::endl;
+    }
+
+    // Cleaning up
+    OutStream.close();
+
     return 0;
 }
