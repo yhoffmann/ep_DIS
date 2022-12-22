@@ -17,7 +17,7 @@ make
 ```
 and to run  
 ```
-./ep.exe
+./ep.exe [Q] [Deltax] [Deltay] [z] [S/C]
 ```
 
 ## The structure of the code
