@@ -7,7 +7,7 @@ const double e_t = 2.0/3.0;
 const double e_b = -1.0/3.0;
 const double N_c = 3.0;
 const double hbarc = 0.1973; //GeV fm
-const double BG = 4.0*hbarc*hbarc; //GeVm2 https://physics.nist.gov/cgi-bin/cuu/Value?rp
+const double BG = 4.0; //GeVm2 https://physics.nist.gov/cgi-bin/cuu/Value?rp
 const double sigma_0 = 2.0*M_PI*BG; //GeVm2
 const double Q_s_0 = 1.0; //GeV
 

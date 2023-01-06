@@ -105,16 +105,17 @@ int main(int argc, char** argv)
     std::cout << "N/NRs:\tT: " << dsigmabydt_coherent_integrated_first_order_result[0]/dsigmabydt_coherent_integrated_first_order_result_UsingBetweenRootCalc[0] << "\tL: " << dsigmabydt_coherent_integrated_first_order_result[1]/dsigmabydt_coherent_integrated_first_order_result_UsingBetweenRootCalc[1] << std::endl;
     std::cout << "A/NRs:\tT: " << dsigmabydt_coherent_analytical_first_order_result[0]/dsigmabydt_coherent_integrated_first_order_result_UsingBetweenRootCalc[0] << "\tL: " << dsigmabydt_coherent_analytical_first_order_result[1]/dsigmabydt_coherent_integrated_first_order_result_UsingBetweenRootCalc[1] << std::endl;
 
-
+/*
     // Comparing first order analytical and numerical results plot
     std::ofstream OutStream;
-    std::string filename = "Data/FirstOrderResultsAnalyticalVsNumerical.txt";
+    std::string filename = "Data/FirstOrderResultsAnalyticalVsNumericalConv3.txt";
     OutStream.open(filename);
     // Closing program if it cannot open the file
     if (!OutStream.is_open()) exit(0);
 
-    std::vector<double> QRange = {0.01, 0.02, 0.03, 0.05, 0.1, 0.15, 0.20, 0.3, 0.33, 0.37, 0.4};
-    std::vector<double> DeltaRange = {0.001, 0.01, 0.02, 0.05, 0.1, 0.3, 0.5, 0.7, 1.0, 1.2, 1.5, 1.7, 2.0, 2.3, 2.7, 3.0};
+    std::vector<double> QRange = {0.3};
+    std::vector<double> DeltaRange = {0.001, 0.01, 0.02, 0.05, 0.1, 0.3, 0.5, 0.7, 1.0, 1.2, 1.5, 1.7, 1.8, 1.9, 2.0, 2.05, 2.1, 2.11, 2.12, 2.13, 2.15, 2.16, 2.17, 2.18, 2.19, 2.20, 2.21, 2.22, 2.23, 2.24, 2.25, 2.26, 2.27, 2.28, 2.29, 2.3, 2.45, 2.50, 2.55, 2.60, 2.65, 2.70, 2.75, 2.80, 2.9, 3.0, 3.3, 3.7, 4.0};
+    //std::vector<double> DeltaRange = {1.8, 1.9, 2.0, 2.05, 2.1, 2.11, 2.12, 2.13, 2.15, 2.16, 2.17, 2.18, 2.19, 2.20, 2.21, 2.22, 2.23, 2.24, 2.25, 2.26, 2.27, 2.28, 2.29, 2.3, 2.45, 2.50, 2.55, 2.60, 2.65, 2.70, 2.75, 2.80, 2.9, 3.0};
 
     OutStream << "#Q, Delta, Ana T,L, Num T,L;   " << QRange.size() << " values of Q (for Gnuplot)" << std::endl;
     OutStream << "#1, 2,         3,4,     5,6" << std::endl;
@@ -144,6 +145,6 @@ int main(int argc, char** argv)
 
     // Cleaning up
     OutStream.close();
-
+*/
     return 0;
 }

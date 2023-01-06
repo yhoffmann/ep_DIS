@@ -276,11 +276,11 @@ static int A_coherent_Integrand_first_order (const int *ndim, const cubareal xx[
     int WhichIntegrand = parameters.WhichIntegrand;
     
     // INTEGRAL RANGES //
-    double b_RangeFactor = std::sqrt(30.0);
-    double b_SignificantRange = hbarc*std::sqrt(2.0*BG);
+    double b_RangeFactor = std::sqrt(80.0);
+    double b_SignificantRange = GeVm1Tofm*std::sqrt(2.0*BG);
 
     double r_RangeFactor = 10.0;
-    double r_SignificantRange = hbarc/epsilonFunc(Q,z);
+    double r_SignificantRange = 1.0/(epsilonFunc(Q,z)*GeVTofmm1);
 
     double bxmin = -b_RangeFactor*b_SignificantRange; // in GeVm1
     double bxmax = b_RangeFactor*b_SignificantRange;
@@ -302,7 +302,7 @@ static int A_coherent_Integrand_first_order (const int *ndim, const cubareal xx[
     double ry = rymin+(rymax-rymin)*xx[3];
     
     // DEFINING JACOBIAN //
-    double Jacobian = (bxmax-bxmin)*(bymax-bymin)*(rxmax-rxmin)*(rymax-rymin); // 
+    double Jacobian = (bxmax-bxmin)*(bymax-bymin)*(rxmax-rxmin)*(rymax-rymin)*std::pow(fmToGeVm1,4.0); // 
 
     // seperating integrand into real and imag parts and defining actual integrand function to be used for integration based on parameter from struct
     switch (WhichIntegrand)
