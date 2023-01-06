@@ -20,28 +20,46 @@
 */
 #include <gsl/gsl_sf_bessel.h>
 
-
-void Check_Commandline_Arguments(int NumberOfArguments)
-{
-    if (NumberOfArguments != 6)
-    {
-        std::cerr << "Error. Wrong number of command line arguments" << std::endl;
-        exit(0);
-    }
-}
-
 using namespace std::complex_literals;
 
 #include "Integrals.cpp"
 
 
+void Check_Commandline_Arguments(int NumberOfArguments)
+{
+    if (NumberOfArguments != 6)
+    {
+        std::cerr << "Error. Wrong number of command line arguments. Run './ep.exe [Q] [Deltax] [Deltay] [z] [Suave or Cuhre]'." << std::endl;
+        exit(0);
+    }
+}
+
+void SpecifyIntegrator(char* WhichIntegrator)
+{
+    switch(*WhichIntegrator)
+    {
+        case 'S':
+            UseSuave = 1;
+            std::cout << "(Using Suave for numerical integration)" << std::endl;
+            break;
+        case 'C':
+            UseSuave = 0;
+            std::cout << "(Using Cuhre for numerical integration)" << std::endl;
+            break;
+        default:
+            std::cerr << "Last command line argument should specify the integrator routine (S for Suave or C for Cuhre)" << std::endl;
+            exit(0);
+            break;
+    }
+}
+
+
 int main(int argc, char** argv)
 {
-    UseSuave = std::atoi(argv[5]);
-    if (UseSuave) {std::cout << "(Using Suave for numerical integration)" << std::endl;}
-    else {std::cout << "(Using Cuhre for numerical integration)" << std::endl;}
-    Check_Commandline_Arguments(argc);
 
+    Check_Commandline_Arguments(argc);
+    SpecifyIntegrator(argv[5]);
+    
     USERDATA data;
 
     data.Q = std::atof(argv[1]);
@@ -51,15 +69,12 @@ int main(int argc, char** argv)
     data.WhichIntegrand = -1; // -1 as failsafe: will stop program if not changed in integration function
 
     SetQuarkFlavor('c');
-
+/*
     // defining vectors for return of coherent and incoherent cross sections
     std::vector<double> dsigmabydt_coherent_Result(2);
     std::vector<double> dsigmabydt_incoherent_Result(2);
     std::vector<double> dsigmabydt_coherent_BetweenRoots_Result(2);
     std::vector<double> dsigmabydt_coherent_polar_Result(2);
-
-    
-
 
     // calculating cross sections and saving results in vectors
     dsigmabydt_coherent_Result = dsigmabydt_coherent(data);
@@ -72,12 +87,12 @@ int main(int argc, char** argv)
     std::cout << "Coherent Cross Section from between roots\nT: " << dsigmabydt_coherent_BetweenRoots_Result[0] << " \tL: " << dsigmabydt_coherent_BetweenRoots_Result[1] << std::endl;
     std::cout << "Coherent Cross Section with polar coordinate integration\nT: " << dsigmabydt_coherent_polar_Result[0] << " \tL: " << dsigmabydt_coherent_polar_Result[1] << std::endl;
     std::cout << "Karthesian/Polar:\nT: " << dsigmabydt_coherent_Result[0]/dsigmabydt_coherent_polar_Result[0] << " \tL: " << dsigmabydt_coherent_Result[1]/dsigmabydt_coherent_polar_Result[1] << std::endl;
-
+*/
     // Comparing first order analytical result with first order integrated result
     std::vector<double> dsigmabydt_coherent_analytical_first_order_result(2);
     std::vector<double> dsigmabydt_coherent_integrated_first_order_result(2);
     std::vector<double> dsigmabydt_coherent_integrated_first_order_result_UsingBetweenRootCalc(2);
-/*
+
     dsigmabydt_coherent_analytical_first_order_result[0] = dsigmabydt_coherent_analytical_first_order::Trans(data.Q,data.Deltax,data.Deltay,data.z);
     dsigmabydt_coherent_analytical_first_order_result[1] = dsigmabydt_coherent_analytical_first_order::Longi(data.Q,data.Deltax,data.Deltay,data.z);
     dsigmabydt_coherent_integrated_first_order_result = dsigmabydt_coherent_first_order(data);
@@ -89,7 +104,7 @@ int main(int argc, char** argv)
     std::cout << "A/N:\tT: " << dsigmabydt_coherent_analytical_first_order_result[0]/dsigmabydt_coherent_integrated_first_order_result[0] << "\tL: " << dsigmabydt_coherent_analytical_first_order_result[1]/dsigmabydt_coherent_integrated_first_order_result[1] << std::endl;
     std::cout << "N/NRs:\tT: " << dsigmabydt_coherent_integrated_first_order_result[0]/dsigmabydt_coherent_integrated_first_order_result_UsingBetweenRootCalc[0] << "\tL: " << dsigmabydt_coherent_integrated_first_order_result[1]/dsigmabydt_coherent_integrated_first_order_result_UsingBetweenRootCalc[1] << std::endl;
     std::cout << "A/NRs:\tT: " << dsigmabydt_coherent_analytical_first_order_result[0]/dsigmabydt_coherent_integrated_first_order_result_UsingBetweenRootCalc[0] << "\tL: " << dsigmabydt_coherent_analytical_first_order_result[1]/dsigmabydt_coherent_integrated_first_order_result_UsingBetweenRootCalc[1] << std::endl;
-*/
+
 
     // Comparing first order analytical and numerical results plot
     std::ofstream OutStream;

@@ -88,20 +88,20 @@ static int A_coherent_Integrand (const int *ndim, const cubareal xx[], const int
     int WhichIntegrand = parameters.WhichIntegrand;
     
     // INTEGRAL RANGES //
-    double RangeFactor_b = 5.0;
-    double RangeFactor_r = 5.0;
+    double b_RangeFactor = 10.0;
+    double r_RangeFactor = 5.0;
 
-    double bxmin = -RangeFactor_b*R;
-    double bxmax = RangeFactor_b*R;
+    double bxmin = -b_RangeFactor*hbarc*hbarc*BG;
+    double bxmax = b_RangeFactor*hbarc*hbarc*BG;
 
-    double bymin = -RangeFactor_b*R;
-    double bymax = RangeFactor_b*R;
+    double bymin = -b_RangeFactor*hbarc*hbarc*BG;
+    double bymax = b_RangeFactor*hbarc*hbarc*BG;
 
-    double rxmin = -RangeFactor_r*R; // TODO Check r range (maybe depending on model)
-    double rxmax = RangeFactor_r*R;
+    double rxmin = -r_RangeFactor*hbarc*hbarc/epsilonFunc(Q,z); // TODO Check r range (maybe depending on model)
+    double rxmax = r_RangeFactor*hbarc*hbarc/epsilonFunc(Q,z);
 
-    double rymin = -RangeFactor_r*R;
-    double rymax = RangeFactor_r*R;
+    double rymin = -r_RangeFactor*hbarc*hbarc/epsilonFunc(Q,z);
+    double rymax = r_RangeFactor*hbarc*hbarc/epsilonFunc(Q,z);
 
     // DEFINING COORDINATE TRANSFORMS FOR CORRECT INTEGRATION RANGE //
     double bx = bxmin+(bxmax-bxmin)*xx[0];
@@ -150,17 +150,17 @@ static int A_coherent_Integrand_polar (const int *ndim, const cubareal xx[], con
     int WhichIntegrand = parameters.WhichIntegrand;
     
     // INTEGRAL RANGES //
-    double RangeFactor_b = 5.0;
-    double RangeFactor_r = 5.0;
+    double b_RangeFactor = 5.0;
+    double r_RangeFactor = 5.0;
 
     double bmin = 0;
-    double bmax = RangeFactor_b*R;
+    double bmax = b_RangeFactor*R;
 
     double phimin = 0;
     double phimax = 2*M_PI;
 
     double rmin = 0; // TODO Check r range (maybe depending on model)
-    double rmax = RangeFactor_r*R;
+    double rmax = r_RangeFactor*R;
 
     // DEFINING COORDINATE TRANSFORMS FOR CORRECT INTEGRATION RANGE //
     double b = bmin+(bmax-bmin)*xx[0];
@@ -211,7 +211,7 @@ static int A_coherent_Integrand_UsingBetweenRootsCalc (const int *ndim, const cu
     double bmax = parameters.bmax;
     
     // INTEGRAL RANGES //
-    double RangeFactor_r = 5.0;
+    double r_RangeFactor = 5.0;
 
     double bxmin = bmin;
     double bxmax = bmax;
@@ -219,11 +219,11 @@ static int A_coherent_Integrand_UsingBetweenRootsCalc (const int *ndim, const cu
     double bymin = bmin;
     double bymax = bmax;
 
-    double rxmin = -RangeFactor_r*R; // TODO Check r range (maybe depending on model)
-    double rxmax = RangeFactor_r*R;
+    double rxmin = -r_RangeFactor*R; // TODO Check r range (maybe depending on model)
+    double rxmax = r_RangeFactor*R;
 
-    double rymin = -RangeFactor_r*R;
-    double rymax = RangeFactor_r*R;
+    double rymin = -r_RangeFactor*R;
+    double rymax = r_RangeFactor*R;
 
     // DEFINING COORDINATE TRANSFORMS FOR CORRECT INTEGRATION RANGE //
     double bx = bxmin+(bxmax-bxmin)*xx[0];
@@ -276,20 +276,23 @@ static int A_coherent_Integrand_first_order (const int *ndim, const cubareal xx[
     int WhichIntegrand = parameters.WhichIntegrand;
     
     // INTEGRAL RANGES //
-    double RangeFactor_b = 10.0;
-    double RangeFactor_r = 10.0;
+    double b_RangeFactor = std::sqrt(30.0);
+    double b_SignificantRange = hbarc*std::sqrt(2.0*BG);
 
-    double bxmin = -RangeFactor_b*R;
-    double bxmax = RangeFactor_b*R;
+    double r_RangeFactor = 10.0;
+    double r_SignificantRange = hbarc/epsilonFunc(Q,z);
 
-    double bymin = -RangeFactor_b*R;
-    double bymax = RangeFactor_b*R;
+    double bxmin = -b_RangeFactor*b_SignificantRange; // in GeVm1
+    double bxmax = b_RangeFactor*b_SignificantRange;
 
-    double rxmin = -RangeFactor_r*R; // TODO Check r range (maybe depending on model)
-    double rxmax = RangeFactor_r*R;
+    double bymin = -b_RangeFactor*b_SignificantRange;
+    double bymax = b_RangeFactor*b_SignificantRange;
 
-    double rymin = -RangeFactor_r*R;
-    double rymax = RangeFactor_r*R;
+    double rxmin = -r_RangeFactor*r_SignificantRange; // in GeVm1
+    double rxmax = r_RangeFactor*r_SignificantRange;
+
+    double rymin = -r_RangeFactor*r_SignificantRange;
+    double rymax = r_RangeFactor*r_SignificantRange;
 
     // DEFINING COORDINATE TRANSFORMS FOR CORRECT INTEGRATION RANGE //
     double bx = bxmin+(bxmax-bxmin)*xx[0];
@@ -299,22 +302,22 @@ static int A_coherent_Integrand_first_order (const int *ndim, const cubareal xx[
     double ry = rymin+(rymax-rymin)*xx[3];
     
     // DEFINING JACOBIAN //
-    double Jacobian = (bxmax-bxmin)*(bymax-bymin)*(rxmax-rxmin)*(rymax-rymin);
+    double Jacobian = (bxmax-bxmin)*(bymax-bymin)*(rxmax-rxmin)*(rymax-rymin); // 
 
     // seperating integrand into real and imag parts and defining actual integrand function to be used for integration based on parameter from struct
     switch (WhichIntegrand)
     {
     case 0:
-        ff[0] = Jacobian / (4.0*M_PI) * A_coherent_integrand_Function_first_order::Trans_real(Q,bx,by,rx,ry,Deltax,Deltay,z);
+        ff[0] = Jacobian * A_coherent_integrand_Function_first_order::Trans_real(Q,bx,by,rx,ry,Deltax,Deltay,z);
         break;
     case 1:
-        ff[0] = Jacobian / (4.0*M_PI) * A_coherent_integrand_Function_first_order::Trans_imag(Q,bx,by,rx,ry,Deltax,Deltay,z);
+        ff[0] = Jacobian * A_coherent_integrand_Function_first_order::Trans_imag(Q,bx,by,rx,ry,Deltax,Deltay,z);
         break;
     case 2:
-        ff[0] = Jacobian / (4.0*M_PI) * A_coherent_integrand_Function_first_order::Longi_real(Q,bx,by,rx,ry,Deltax,Deltay,z);
+        ff[0] = Jacobian * A_coherent_integrand_Function_first_order::Longi_real(Q,bx,by,rx,ry,Deltax,Deltay,z);
         break;
     case 3:
-        ff[0] = Jacobian / (4.0*M_PI) * A_coherent_integrand_Function_first_order::Longi_imag(Q,bx,by,rx,ry,Deltax,Deltay,z);
+        ff[0] = Jacobian * A_coherent_integrand_Function_first_order::Longi_imag(Q,bx,by,rx,ry,Deltax,Deltay,z);
         break;
     default:
         std::cout << "No Integrand function for this parameter." << std::endl;
@@ -340,7 +343,7 @@ static int A_coherent_Integrand_first_order_UsingBetweenRootsCalc (const int *nd
     double bmax = parameters.bmax;
     
     // INTEGRAL RANGES //
-    double RangeFactor_r = 5.0;
+    double r_RangeFactor = 5.0;
 
     double bxmin = bmin;
     double bxmax = bmax;
@@ -348,11 +351,11 @@ static int A_coherent_Integrand_first_order_UsingBetweenRootsCalc (const int *nd
     double bymin = bmin;
     double bymax = bmax;
 
-    double rxmin = -RangeFactor_r*R; // TODO Check r range (maybe depending on model)
-    double rxmax = RangeFactor_r*R;
+    double rxmin = -r_RangeFactor*R; // TODO Check r range (maybe depending on model)
+    double rxmax = r_RangeFactor*R;
 
-    double rymin = -RangeFactor_r*R;
-    double rymax = RangeFactor_r*R;
+    double rymin = -r_RangeFactor*R;
+    double rymax = r_RangeFactor*R;
 
     // DEFINING COORDINATE TRANSFORMS FOR CORRECT INTEGRATION RANGE //
     double bx = bxmin+(bxmax-bxmin)*xx[0];
@@ -405,28 +408,28 @@ static int A_incoherent_Integrand(const int *ndim, const cubareal xx[], const in
     int WhichIntegrand = parameters.WhichIntegrand;
 
     // INTEGRAL RANGES //
-    double RangeFactor_b = 5.0;
-    double RangeFactor_r = 10.0;
+    double b_RangeFactor = 5.0;
+    double r_RangeFactor = 10.0;
 
-    double bxmin = -RangeFactor_b*R;
-    double bxmax = RangeFactor_b*R;
-    double bymin = -RangeFactor_b*R;
-    double bymax = RangeFactor_b*R;
+    double bxmin = -b_RangeFactor*R;
+    double bxmax = b_RangeFactor*R;
+    double bymin = -b_RangeFactor*R;
+    double bymax = b_RangeFactor*R;
 
-    double rxmin = -RangeFactor_r*R; // TODO Check r range (maybe depending on model)
-    double rxmax = RangeFactor_r*R;
-    double rymin = -RangeFactor_r*R;
-    double rymax = RangeFactor_r*R;
+    double rxmin = -r_RangeFactor*R; // TODO Check r range (maybe depending on model)
+    double rxmax = r_RangeFactor*R;
+    double rymin = -r_RangeFactor*R;
+    double rymax = r_RangeFactor*R;
 
-    double bbarxmin = -RangeFactor_b*R;
-    double bbarxmax = RangeFactor_b*R;
-    double bbarymin = -RangeFactor_b*R;
-    double bbarymax = RangeFactor_b*R;
+    double bbarxmin = -b_RangeFactor*R;
+    double bbarxmax = b_RangeFactor*R;
+    double bbarymin = -b_RangeFactor*R;
+    double bbarymax = b_RangeFactor*R;
 
-    double rbarxmin = -RangeFactor_r*R; // TODO Check r range (maybe depending on model)
-    double rbarxmax = RangeFactor_r*R;
-    double rbarymin = -RangeFactor_r*R;
-    double rbarymax = RangeFactor_r*R;
+    double rbarxmin = -r_RangeFactor*R; // TODO Check r range (maybe depending on model)
+    double rbarxmax = r_RangeFactor*R;
+    double rbarymin = -r_RangeFactor*R;
+    double rbarymax = r_RangeFactor*R;
 
     // DEFINING COORDINATE TRANSFORMS FOR CORRECT INTEGRATION RANGE //
     double bx = bxmin+(bxmax-bxmin)*xx[0];
@@ -491,7 +494,7 @@ std::vector<double> dsigmabydt_coherent (USERDATA &parameters)
 
     double IntegrationResults[4];
     for (parameters.WhichIntegrand=0; parameters.WhichIntegrand<=3; parameters.WhichIntegrand++){
-        if (UseSuave) //UseSuave for Suave integration, UseSuave for Cuhre integration
+        if (UseSuave)
         {
             Suave(Num_of_Dimensions, Num_of_Integrals,
                 A_coherent_Integrand, &parameters, Num_of_Points,
@@ -681,7 +684,7 @@ std::vector<double> dsigmabydt_coherent_first_order (USERDATA &parameters)
 
     double IntegrationResults[4];
     for (parameters.WhichIntegrand=0; parameters.WhichIntegrand<=3; parameters.WhichIntegrand++){
-        if (UseSuave) // UseSuave for Suave integration, UseSuave for Cuhre integration
+        if (UseSuave)
         {
             Suave(Num_of_Dimensions, Num_of_Integrals,
                 A_coherent_Integrand_first_order, &parameters, Num_of_Points,
@@ -726,13 +729,13 @@ namespace dsigmabydt_coherent_analytical_first_order
 {
     double Trans (double Q, double Deltax, double Deltay, double z)
     {
-        std::complex<double> Amplitude = -1.0i * (-A_Q) * std::sqrt(2.0*m_Q_c*N_c) * e_Q * e * (-0.25*sigma_0*Q_s_0*Q_s_0) * exp(-R*R*(Deltax*Deltax+Deltay*Deltay)/2.0) * 2.0 / std::pow(epsilonFunc(Q,z),4.0); // GeVm2
+        std::complex<double> Amplitude = -1.0i * (-A_Q) * std::sqrt(2.0*m_Q_c*N_c) * e_Q * e * (-0.25*sigma_0*Q_s_0*Q_s_0) * exp(-BG*(Deltax*Deltax+Deltay*Deltay)/2.0) * 2.0 / std::pow(epsilonFunc(Q,z),4.0); // GeVm2
         return std::pow(std::abs(Amplitude),2.0) / 16.0 / M_PI * (GeVm1Tofm*GeVm1Tofm)*fm2TonB; // GeVm2 nb
     }
 
     double Longi (double Q, double Deltax, double Deltay, double z)
     {
-        std::complex<double> Amplitude = -1.0i * (-A_Q) * std::sqrt(2.0*N_c/m_Q_c) * e_Q * e * Q * (-0.25*sigma_0*Q_s_0*Q_s_0) * exp(-R*R*(Deltax*Deltax+Deltay*Deltay)/2.0) * 1.0 / std::pow(epsilonFunc(Q,z),4.0); //GeVm2
+        std::complex<double> Amplitude = -1.0i * (-A_Q) * std::sqrt(2.0*N_c/m_Q_c) * e_Q * e * Q * (-0.25*sigma_0*Q_s_0*Q_s_0) * exp(-BG*(Deltax*Deltax+Deltay*Deltay)/2.0) * 1.0 / std::pow(epsilonFunc(Q,z),4.0); //GeVm2
         return std::pow(std::abs(Amplitude),2.0) / 16.0 / M_PI * (GeVm1Tofm*GeVm1Tofm)*fm2TonB; // GeVm2 nb
     }
 }
@@ -832,7 +835,7 @@ std::vector<double> dsigmabydt_incoherent (USERDATA &parameters)
 
     double IntegrationResults[4];
     for (parameters.WhichIntegrand=0; parameters.WhichIntegrand<=3; parameters.WhichIntegrand++){
-        if (UseSuave) // UseSuave for Suave integration, UseSuave for Cuhre integration
+        if (UseSuave)
         {
             Suave(Num_of_Dimensions, Num_of_Integrals,
                 A_incoherent_Integrand, &parameters, Num_of_Points,

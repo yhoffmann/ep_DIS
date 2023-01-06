@@ -7,12 +7,14 @@ set termoption font ',8'
 set view 64,159
 
 set size square 0.98,0.98
-set key bottom left box
+set key top left box
 
 set grid
 
+set title "Cross section first order analytical divided by first order numerical result"
+
 set xlabel "|{/Symbol D}|"
-#set ylabel "d{/Symbol s}/dt-longitudinal [nbGeV^{-2}]"
+set ylabel "d{/Symbol s}/dt-longitudinal [nb GeV^{-2}]"
 
 
 #set palette defined (0 "white", 0.5 "#ffd000" , 1.6 "red", 2.7 "blue", 3.8 "black")
@@ -25,4 +27,4 @@ set xlabel "|{/Symbol D}|"
 #plot for [col=0:8:1] "DeltaAndQ_Coherent_Test.txt" using 2:(int($0)%col==1?$4:1/0) title "strcol($1)" with lines
 
 #plot [0:1.4] "FirstOrderResultsAnalyticalVsNumerical.txt" using 2:($4/$6) with lines
-plot [0:1.4] for [IDX=0:15] 'FirstOrderResultsAnalyticalVsNumerical.txt' i IDX u 2:($4/$6) lw 2 w lines title columnheader(1)
+plot [0:] for [IDX=0:10] 'FirstOrderResultsAnalyticalVsNumerical.txt' i IDX u 2:($4/$6) lw 2  title columnheader(1)
