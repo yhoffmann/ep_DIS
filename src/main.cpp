@@ -69,52 +69,41 @@ int main(int argc, char** argv)
     data.WhichIntegrand = -1; // -1 as failsafe: will stop program if not changed in integration function
 
     SetQuarkFlavor('c');
-/*
+
     // defining vectors for return of coherent and incoherent cross sections
     std::vector<double> dsigmabydt_coherent_Result(2);
     std::vector<double> dsigmabydt_incoherent_Result(2);
-    std::vector<double> dsigmabydt_coherent_BetweenRoots_Result(2);
-    std::vector<double> dsigmabydt_coherent_polar_Result(2);
 
     // calculating cross sections and saving results in vectors
     dsigmabydt_coherent_Result = dsigmabydt_coherent(data);
     dsigmabydt_incoherent_Result = dsigmabydt_incoherent(data);
-    dsigmabydt_coherent_polar_Result = dsigmabydt_coherent_polar(data);
 
     // printing cross sections results for normal integrals
     std::cout << "###Cross section results\nCoherent Cross Section:\nT: " << dsigmabydt_coherent_Result[0] << " \tL: " << dsigmabydt_coherent_Result[1] << std::endl;
     std::cout << "Incoherent Cross Section:\nT: " << dsigmabydt_incoherent_Result[0] << " \tL: " << dsigmabydt_incoherent_Result[1] << std::endl;
-    std::cout << "Coherent Cross Section from between roots\nT: " << dsigmabydt_coherent_BetweenRoots_Result[0] << " \tL: " << dsigmabydt_coherent_BetweenRoots_Result[1] << std::endl;
-    std::cout << "Coherent Cross Section with polar coordinate integration\nT: " << dsigmabydt_coherent_polar_Result[0] << " \tL: " << dsigmabydt_coherent_polar_Result[1] << std::endl;
-    std::cout << "Karthesian/Polar:\nT: " << dsigmabydt_coherent_Result[0]/dsigmabydt_coherent_polar_Result[0] << " \tL: " << dsigmabydt_coherent_Result[1]/dsigmabydt_coherent_polar_Result[1] << std::endl;
-*/
+
     // Comparing first order analytical result with first order integrated result
     std::vector<double> dsigmabydt_coherent_analytical_first_order_result(2);
     std::vector<double> dsigmabydt_coherent_integrated_first_order_result(2);
-    std::vector<double> dsigmabydt_coherent_integrated_first_order_result_UsingBetweenRootCalc(2);
 
     dsigmabydt_coherent_analytical_first_order_result[0] = dsigmabydt_coherent_analytical_first_order::Trans(data.Q,data.Deltax,data.Deltay,data.z);
     dsigmabydt_coherent_analytical_first_order_result[1] = dsigmabydt_coherent_analytical_first_order::Longi(data.Q,data.Deltax,data.Deltay,data.z);
     dsigmabydt_coherent_integrated_first_order_result = dsigmabydt_coherent_first_order(data);
-    dsigmabydt_coherent_integrated_first_order_result_UsingBetweenRootCalc = dsigmabydt_coherent_first_order_UsingBetweenRootCalc(data);
 
     std::cout << "###Comparing first order analytical with numerical result and numerical reusult with root calculation:\nA:\tT: " << dsigmabydt_coherent_analytical_first_order_result[0] << "\tL: " << dsigmabydt_coherent_analytical_first_order_result[1] << std::endl;
     std::cout << "N:\tT: " << dsigmabydt_coherent_integrated_first_order_result[0] << "\tL: " << dsigmabydt_coherent_integrated_first_order_result[1] << std::endl;
-    std::cout << "NRoots:\tT: " << dsigmabydt_coherent_integrated_first_order_result_UsingBetweenRootCalc[0] << "\tL: " << dsigmabydt_coherent_integrated_first_order_result_UsingBetweenRootCalc[1] << std::endl;
     std::cout << "A/N:\tT: " << dsigmabydt_coherent_analytical_first_order_result[0]/dsigmabydt_coherent_integrated_first_order_result[0] << "\tL: " << dsigmabydt_coherent_analytical_first_order_result[1]/dsigmabydt_coherent_integrated_first_order_result[1] << std::endl;
-    std::cout << "N/NRs:\tT: " << dsigmabydt_coherent_integrated_first_order_result[0]/dsigmabydt_coherent_integrated_first_order_result_UsingBetweenRootCalc[0] << "\tL: " << dsigmabydt_coherent_integrated_first_order_result[1]/dsigmabydt_coherent_integrated_first_order_result_UsingBetweenRootCalc[1] << std::endl;
-    std::cout << "A/NRs:\tT: " << dsigmabydt_coherent_analytical_first_order_result[0]/dsigmabydt_coherent_integrated_first_order_result_UsingBetweenRootCalc[0] << "\tL: " << dsigmabydt_coherent_analytical_first_order_result[1]/dsigmabydt_coherent_integrated_first_order_result_UsingBetweenRootCalc[1] << std::endl;
-
+    
 /*
     // Comparing first order analytical and numerical results plot
     std::ofstream OutStream;
-    std::string filename = "Data/FirstOrderResultsAnalyticalVsNumericalConv3.txt";
+    std::string filename = "Data/FirstOrderResultsAnalyticalVsNumerical.txt";
     OutStream.open(filename);
     // Closing program if it cannot open the file
     if (!OutStream.is_open()) exit(0);
 
-    std::vector<double> QRange = {0.3};
-    std::vector<double> DeltaRange = {0.001, 0.01, 0.02, 0.05, 0.1, 0.3, 0.5, 0.7, 1.0, 1.2, 1.5, 1.7, 1.8, 1.9, 2.0, 2.05, 2.1, 2.11, 2.12, 2.13, 2.15, 2.16, 2.17, 2.18, 2.19, 2.20, 2.21, 2.22, 2.23, 2.24, 2.25, 2.26, 2.27, 2.28, 2.29, 2.3, 2.45, 2.50, 2.55, 2.60, 2.65, 2.70, 2.75, 2.80, 2.9, 3.0, 3.3, 3.7, 4.0};
+    std::vector<double> QRange = {0.01, 0.05, 0.1, 0.2, 0.3};
+    std::vector<double> DeltaRange = {0.001, 0.02, 0.04, 0.06, 0.08, 0.1, 0.13, 0.17, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.7, 1.8, 1.9, 2.0, 2.3, 2.7, 3.0, 3.3, 3.7, 4.0};
     //std::vector<double> DeltaRange = {1.8, 1.9, 2.0, 2.05, 2.1, 2.11, 2.12, 2.13, 2.15, 2.16, 2.17, 2.18, 2.19, 2.20, 2.21, 2.22, 2.23, 2.24, 2.25, 2.26, 2.27, 2.28, 2.29, 2.3, 2.45, 2.50, 2.55, 2.60, 2.65, 2.70, 2.75, 2.80, 2.9, 3.0};
 
     OutStream << "#Q, Delta, Ana T,L, Num T,L;   " << QRange.size() << " values of Q (for Gnuplot)" << std::endl;
