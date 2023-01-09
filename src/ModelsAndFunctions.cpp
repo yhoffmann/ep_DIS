@@ -123,22 +123,22 @@ namespace A_coherent_integrand_Function_first_order
 {
     double Trans_real (double Q, double bx, double by, double rx, double ry, double Deltax, double Deltay, double z)
     {
-        return -1.0/(4.0*M_PI)*PsiPsi_delta_evaluated::Trans(Q,rx,ry,z)/*GeV2*/ * sin(-1.0*(bx*Deltax+by*Deltay)*fmToGeVm1) * 2.0 * (-0.25*Q_s_0*Q_s_0)/*GeV2*/ * (rx*rx+ry*ry)*(fmToGeVm1*fmToGeVm1)/*GeVm2*/ * exp( -(bx*bx+by*by)*(fmToGeVm1*fmToGeVm1)/(2.0*BG) ); // in GeV2
+        return -1.0/(4.0*M_PI)*PsiPsi_delta_evaluated::Trans(Q,rx,ry,z)/*GeV2*/ * sin(-1.0*(bx*Deltax+by*Deltay)*fmToGeVm1) * 2.0 * (-0.25)*GBWModel::Q_s_squared(bx,by)/*GeV2*/*(rx*rx+ry*ry)*(fmToGeVm1*fmToGeVm1)/*GeVm2*/; // in GeV2
     }
 
     double Trans_imag (double Q, double bx, double by, double rx, double ry, double Deltax, double Deltay, double z)
     {
-        return 1.0/(4.0*M_PI)*PsiPsi_delta_evaluated::Trans(Q,rx,ry,z) * cos(-1.0*(bx*Deltax+by*Deltay)*fmToGeVm1) * 2.0 * (-0.25*Q_s_0*Q_s_0) * (rx*rx+ry*ry)*(fmToGeVm1*fmToGeVm1)  * exp( -(bx*bx+by*by)*(fmToGeVm1*fmToGeVm1)/(2.0*BG) );
+        return 1.0/(4.0*M_PI)*PsiPsi_delta_evaluated::Trans(Q,rx,ry,z) * cos(-1.0*(bx*Deltax+by*Deltay)*fmToGeVm1) * 2.0 * (-0.25)*GBWModel::Q_s_squared(bx,by)*(rx*rx+ry*ry)*(fmToGeVm1*fmToGeVm1);
     }
 
     double Longi_real (double Q, double bx, double by, double rx, double ry, double Deltax, double Deltay, double z)
     {
-        return -1.0/(4.0*M_PI)*PsiPsi_delta_evaluated::Longi(Q,rx,ry,z) * sin(-1.0*(bx*Deltax+by*Deltay)*fmToGeVm1) * 2.0 * (-0.25*Q_s_0*Q_s_0) * (rx*rx+ry*ry)*(fmToGeVm1*fmToGeVm1)  * exp( -(bx*bx+by*by)*(fmToGeVm1*fmToGeVm1)/(2.0*BG) );
+        return -1.0/(4.0*M_PI)*PsiPsi_delta_evaluated::Longi(Q,rx,ry,z) * sin(-1.0*(bx*Deltax+by*Deltay)*fmToGeVm1) * 2.0 * (-0.25)*GBWModel::Q_s_squared(bx,by)*(rx*rx+ry*ry)*(fmToGeVm1*fmToGeVm1);
     }
 
     double Longi_imag (double Q, double bx, double by, double rx, double ry, double Deltax, double Deltay, double z)
     {
-        return 1.0/(4.0*M_PI)*PsiPsi_delta_evaluated::Longi(Q,rx,ry,z) * cos(-1.0*(bx*Deltax+by*Deltay)*fmToGeVm1) * 2.0 * (-0.25*Q_s_0*Q_s_0) * (rx*rx+ry*ry)*(fmToGeVm1*fmToGeVm1)  * exp( -(bx*bx+by*by)*(fmToGeVm1*fmToGeVm1)/(2.0*BG) );
+        return 1.0/(4.0*M_PI)*PsiPsi_delta_evaluated::Longi(Q,rx,ry,z) * cos(-1.0*(bx*Deltax+by*Deltay)*fmToGeVm1) * 2.0 * (-0.25)*GBWModel::Q_s_squared(bx,by)*(rx*rx+ry*ry)*(fmToGeVm1*fmToGeVm1);
     }
 }
 

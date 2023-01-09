@@ -1,5 +1,5 @@
 #define MINEVAL 100000
-#define MAXEVAL 500000
+#define MAXEVAL 1000000
 
 #define NSTART 1000
 #define NINCREASE 500

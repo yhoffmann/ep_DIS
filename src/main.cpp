@@ -90,7 +90,7 @@ int main(int argc, char** argv)
     dsigmabydt_coherent_analytical_first_order_result[1] = dsigmabydt_coherent_analytical_first_order::Longi(data.Q,data.Deltax,data.Deltay,data.z);
     dsigmabydt_coherent_integrated_first_order_result = dsigmabydt_coherent_first_order(data);
 
-    std::cout << "###Comparing first order analytical with numerical result and numerical reusult with root calculation:\nA:\tT: " << dsigmabydt_coherent_analytical_first_order_result[0] << "\tL: " << dsigmabydt_coherent_analytical_first_order_result[1] << std::endl;
+    std::cout << "###Comparing first order analytical with numerical result:\nA:\tT: " << dsigmabydt_coherent_analytical_first_order_result[0] << "\tL: " << dsigmabydt_coherent_analytical_first_order_result[1] << std::endl;
     std::cout << "N:\tT: " << dsigmabydt_coherent_integrated_first_order_result[0] << "\tL: " << dsigmabydt_coherent_integrated_first_order_result[1] << std::endl;
     std::cout << "A/N:\tT: " << dsigmabydt_coherent_analytical_first_order_result[0]/dsigmabydt_coherent_integrated_first_order_result[0] << "\tL: " << dsigmabydt_coherent_analytical_first_order_result[1]/dsigmabydt_coherent_integrated_first_order_result[1] << std::endl;
     
