@@ -22,6 +22,7 @@ set ylabel "1st term/2nd term [1]"
 #set palette defined (0 "white", 0.5 "#ffd000" , 1.6 "red", 2.7 "blue", 3.8 "black")
 #set palette rgb 21,22,23
 
+set logscale x 10
 set logscale y 10
 #set pm3d
 #splot "FirstOrderResultsAnalyticalVsNumerical.txt" using 1:2:($4/$6) notitle# pt 2 ps 2 lw 2 title "a"
